@@ -56,33 +56,43 @@ var dictionary = {
 
 var Key = {
 	// string キーボードの名前
-	key : null, 
+	key : null,
 	// boolean メタキーかどうか
 	isMetakey : false,
-	// object 自身のDOMオブジェクト	
-	dom : null, 
-	// object 保持するパイメニューのオブジェクト	
+	// object 自身のDOMオブジェクト
+	dom : null,
+	// object 表示する文字
+	chara : null,
+	// object 保持するパイメニューのオブジェクト
 	pie : null,
-	// function イニシャライザ 
+	// function イニシャライザ
 	init : function(key) {
 		// キーの文字と長さを取得。keyがマルチバイト文字だった場合は知らん
 		var _key = key;
 		var _keylen = key.length;
+		//通常キーの場合の処理
 		if(_keylen == 1) {
-			//通常キーの場合の処理
+			//インスタンス変数の初期化
 			this.isMetakey = false;
 			this.key = _key;
 			this.pieContents = dictionary[_key];
 			//DOMオブジェクトを生成
 			this.dom = document.createElement("div");
-			this.dom.className = "key dpshadow grad";
+			this.dom.className = "key dpshadow grad_gray";
 			this.dom.id = "key-" + _key;
-			var _char = document.createElement("div");
-			_char.className = "char";			
-			_char.innerHTML = _key.toUpperCase();
-			_elem.appendChild(_char);
+			//キャラクターのDOMオブジェクトを生成
+			this.chara = document.createElement("div");
+			this.className = "char";
+			this.dom.innerHTML = _key.toUpperCase();
+			this.dom.appendChild(this.chara);
+			// PieMenuのDOMオブジェクトを生成
+			var _pie = object(Pie);
+			_pie.init(_key);
+			this.pie = _pie;
+			this.dom.appendChild(this.pie.dom);
+			// htmlにappend（この処理は多分どこか別にする）
 			var keyboard = document.getElementById("keyboard");
-			keyboard.appendChild(_elem);
+			keyboard.appendChild(this.dom);
 		} else if(_keylen > 1) {
 			this.isMetakey = true;
 			this.key = _key;
@@ -108,32 +118,79 @@ var Key = {
 }
 
 var Pie = {
+	// 保持している変換表
+	dictionary : null,
 	// object 自身のDOMオブジェクト
 	dom : null,
 	// array 保持する個別のパイメニュー
 	concents : null,
 	// object 真ん中の文字
 	center : null,
-	init : function(key){
+	// function イニシャライザ 引数は string のキー
+	init : function(key) {
 		var _key = key;
-		if(_key.length == 1){
+		if(_key.length == 1) {
 			//普通のキーの処理
-			this.contents = dictionary[_key];
+			this.dictionary = dictionary[_key];
 			this.dom = document.createElement("div");
-			this.id = "pie-" + _key;
-			this.className = "pie";
-		}else if(_key.length > 1){
+			this.dom.id = "pie-" + _key;
+			this.dom.className = "pie　grad_black";
+			this.concents = [];
+			for(var i = 0; i < 5; i++) {
+				var concent = object(PiePiece);
+				concent.init({
+					chara : dictionary[_key],
+					type : "concent"
+				});
+				this.concents.push(concent);				
+			}
+			var _center = object(PiePiece);
+			_center.init({
+				chara : _key.toUpperCase(),
+				type : "center"
+			});
+			this.center = _center;
+			this.dom.appendChild(this.center.dom);
+			for(var i = 0 ; i < this.concents.length ; i++){
+				this.dom.appendChild(this.concents[i].dom);
+			}
+		} else if(_key.length > 1) {
 			//メタキーの処理
 		}
-	}	
+	}
+}
+var PiePiece = {
+	dom : null,
+	chara : null,
+	init : function(opts) {
+		var _chara = opts.chara;
+		var _type = opts.type;
+		this.dom = document.createElement("div");
+		this.chara = document.createElement("div");
+		this.chara.innerHTML = _chara;
+		this.dom.appendChild(this.chara);
+		switch(_type) {
+			case "concent" :
+				this.dom.className = "pieConcents grad_blue inshadow";
+				this.chara.className = "pieConcentChar";
+				break;
+			case "center" :
+				this.dom.className = "pieCenter grad_gray inshadow";
+				this.chara.className = "pieCenterChar";
+				break;
+			default :
+				return false;
+				break;
+		}
+	}
 }
 
 var Textarea = {
 	dom : null,
-	init : function(){
+	init : function() {
 		this.dom = document.createElement("textarea");
 	},
-	insertChar : function(opts){
+	insertChar : function(opts) {
 		var _char = opts.chara || "";
 		var _location = opts.location || 0;
 		//適当
@@ -145,12 +202,12 @@ var Initializer = {
 	charkeys : function() {
 		var rowHas = [10, 9, 9];
 		var keysize = {
-			"w" : 45,
-			"h" : 45
+			"w" : 64,
+			"h" : 64
 		};
 		var margin = {
-			"top" : 10,
-			"left" : 10
+			"top" : 5,
+			"left" : 5
 		};
 		var rowNum = rowHas.length;
 		var currentChar = 0;
@@ -158,8 +215,7 @@ var Initializer = {
 			for(var j = 0; j < rowHas[i]; j++) {
 				var k = object(Key);
 				k.init(charkeys[currentChar]);
-				k.dom.style.top = i * (keysize.h + margin.top) + "px",
-				k.dom.style.left= j * (keysize.w + margin.left) + "px"
+				k.dom.style.top = i * (keysize.h + margin.top) + "px", k.dom.style.left = j * (keysize.w + margin.left) + "px"
 				currentChar++;
 			}
 		}
@@ -181,8 +237,8 @@ function object(o) {
 	f.prototype = o;
 	n = new f;
 	for( i = 1, len = arguments.length; i < len; ++i)
-	for(prop in arguments[i])
-	n[prop] = arguments[i][prop];
+		for(prop in arguments[i])
+		n[prop] = arguments[i][prop];
 	return n;
 }
 
