@@ -55,19 +55,18 @@
 	</head>
 	<body>
 		<script type="text/javascript">
-			$(function(){
-				var b = document.getElementById("b");
-				var c = document.getElementById("c");
-				c.appendChild(b);
-				
-				var d = document.createElement("div");
-				d.hoge = "hoge";
-				d.func = function(c){
-					alert(c);
+			$(function(){									
+				var Dom = document.createElement("div");
+				Dom.name = null;
+				Dom.init = function(name){
+					this.name = name;
 				}
-				log(d.hoge);
-				d.func("hoge!");
-				log(d);
+				var d = object(Dom);
+				d.init("yusuke");
+				log(d.name);
+				dd = object(Dom);
+				dd.init("sakurai");
+				log(dd.name);	
 			})
 		</script>
 		<div id="a">
