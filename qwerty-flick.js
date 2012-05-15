@@ -75,22 +75,22 @@ var Key = {
 			//インスタンス変数の初期化
 			this.isMetakey = false;
 			this.key = _key;
-			this.pieContents = dictionary[_key];
+			//this.pieContents = dictionary[_key];
 			//DOMオブジェクトを生成
 			this.dom = document.createElement("div");
 			this.dom.className = "key dpshadow grad_gray";
 			this.dom.id = "key-" + _key;
+			this.dom.key = _key;
 			//キャラクターのDOMオブジェクトを生成
 			this.chara = document.createElement("div");
 			this.className = "char";
 			this.dom.innerHTML = _key.toUpperCase();
 			this.dom.appendChild(this.chara);
-			// PieMenuのDOMオブジェクトを生成
-			var _pie = object(Pie);
-			_pie.init(_key);
-			this.pie = _pie;
-			this.dom.appendChild(this.pie.dom);
 			// htmlにappend（この処理は多分どこか別にする）
+			// DOMオブジェクトのマウスイベントをバインド
+			this.dom.onmousedown = this.onmousedown;
+			this.dom.onmouseup = this.onmouseup;
+			this.dom.onmousemove = this.onmousemove;
 			var keyboard = document.getElementById("keyboard");
 			keyboard.appendChild(this.dom);
 		} else if(_keylen > 1) {
@@ -114,8 +114,35 @@ var Key = {
 					break;
 			}
 		}
+	},
+	onmousedown : function(event) {
+		//ここでのthisはKeyではなくKey.domなので注意
+		//どうにか修正できないか？
+		//Key.dom.key にも同じようにプロパティを作った。		
+		log(this.key + " key was moused down");
+		// PieMenuのDOMオブジェクトを生成
+		
+		var _pie = object(Pie);
+		_pie.init(_key);
+		this.pie = _pie;
+		this.dom.appendChild(this.pie.dom);		
+	},
+	onmouseup : function(event) {
+		log(this.key + " key was moused up");
+	},
+	onmousemove : function(event) {
+		;
 	}
 }
+
+/*
+ * Pieメニューのオブジェクト。
+ * 一度全キーボードに対応するオブジェクトを作ってappendしたらめちゃくちゃ重くなったから
+ * Key.onmousedownの度に生成→破棄を繰り返す
+ * or
+ * 最初に生成＆opacity=0.0でKey.onmousedownでそのKeyにappendしてfadeInさせるか
+ * 明らかに↑の方がいい気がする。
+ */
 
 var Pie = {
 	// 保持している変換表
@@ -142,7 +169,7 @@ var Pie = {
 					chara : dictionary[_key],
 					type : "concent"
 				});
-				this.concents.push(concent);				
+				this.concents.push(concent);
 			}
 			var _center = object(PiePiece);
 			_center.init({
@@ -151,7 +178,7 @@ var Pie = {
 			});
 			this.center = _center;
 			this.dom.appendChild(this.center.dom);
-			for(var i = 0 ; i < this.concents.length ; i++){
+			for(var i = 0; i < this.concents.length; i++) {
 				this.dom.appendChild(this.concents[i].dom);
 			}
 		} else if(_key.length > 1) {

@@ -59,6 +59,15 @@
 				var b = document.getElementById("b");
 				var c = document.getElementById("c");
 				c.appendChild(b);
+				
+				var d = document.createElement("div");
+				d.hoge = "hoge";
+				d.func = function(c){
+					alert(c);
+				}
+				log(d.hoge);
+				d.func("hoge!");
+				log(d);
 			})
 		</script>
 		<div id="a">
