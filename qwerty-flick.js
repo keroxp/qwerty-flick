@@ -55,9 +55,15 @@ var dictionary = {
 //boolean isMetakey = false
 
 var Key = {
-	key : null,
-	pieContents : null,
+	// string キーボードの名前
+	key : null, 
+	// boolean メタキーかどうか
 	isMetakey : false,
+	// object 自身のDOMオブジェクト	
+	dom : null, 
+	// object 保持するパイメニューのオブジェクト	
+	pie : null,
+	// function イニシャライザ 
 	init : function(key) {
 		// キーの文字と長さを取得。keyがマルチバイト文字だった場合は知らん
 		var _key = key;
@@ -68,9 +74,9 @@ var Key = {
 			this.key = _key;
 			this.pieContents = dictionary[_key];
 			//DOMオブジェクトを生成
-			var _elem = document.createElement("div");
-			_elem.className = "key dpshadow grad";
-			_elem.id = "key-" + _key;
+			this.dom = document.createElement("div");
+			this.dom.className = "key dpshadow grad";
+			this.dom.id = "key-" + _key;
 			var _char = document.createElement("div");
 			_char.className = "char";			
 			_char.innerHTML = _key.toUpperCase();
@@ -98,17 +104,40 @@ var Key = {
 					break;
 			}
 		}
+	}
+}
+
+var Pie = {
+	// object 自身のDOMオブジェクト
+	dom : null,
+	// array 保持する個別のパイメニュー
+	concents : null,
+	// object 真ん中の文字
+	center : null,
+	init : function(key){
+		var _key = key;
+		if(_key.length == 1){
+			//普通のキーの処理
+			this.contents = dictionary[_key];
+			this.dom = document.createElement("div");
+			this.id = "pie-" + _key;
+			this.className = "pie";
+		}else if(_key.length > 1){
+			//メタキーの処理
+		}
+	}	
+}
+
+var Textarea = {
+	dom : null,
+	init : function(){
+		this.dom = document.createElement("textarea");
 	},
-	setPosition : function(pos) {
-		var _top = pos.top || "";
-		var _right = pos.right || "";
-		var _bottom = pos.bottom || "";
-		var _left = pos.left || "";
-		var _this = document.getElementById("key-" + this.key);
-		_this.style.top = _top;
-		_this.style.right = _right;
-		_this.style.left = _left;
-		_this.style.bottom = _bottom;
+	insertChar : function(opts){
+		var _char = opts.chara || "";
+		var _location = opts.location || 0;
+		//適当
+		this.dom.val += _char;
 	}
 }
 
@@ -129,10 +158,8 @@ var Initializer = {
 			for(var j = 0; j < rowHas[i]; j++) {
 				var k = object(Key);
 				k.init(charkeys[currentChar]);
-				k.setPosition({
-					top : i * (keysize.h + margin.top) + "px",
-					left : j * (keysize.w + margin.left) + "px"
-				});
+				k.dom.style.top = i * (keysize.h + margin.top) + "px",
+				k.dom.style.left= j * (keysize.w + margin.left) + "px"
 				currentChar++;
 			}
 		}
