@@ -1,0 +1,46 @@
+<!DOCTYPE HTML>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>QWERTY-Flick</title>
+<link rel="stylesheet" href="a.css" />
+<script src="jquery-1.7.1.min.js"></script>
+<script src="qwerty-flick.js"></script>
+<script type="text/javascript">
+$(function(){
+    var keys = ["q","w","e","r","t","y","u","i","o","p","a","s","d","f","g","h","j","k","l","z","x","c","v","b","n","m",",","."];
+    var len = keys.length;
+    var keyw = 46;
+    var keyh = 46;
+    var marginLeft = 5;
+    var marginTop = 5;
+    for(var i = 0 ; i < len ; i++){
+        var q = object(Key);
+        q.init(keys[i]);
+        q.setPosition({
+            top : row(i)*(keyh + marginTop) + "px",
+            left : i%9*(keyw + marginLeft) + "px"
+        });
+    }
+
+    function row (inc)
+    {
+        if(0<= inc && inc <= 9)
+        {
+            return 0;
+        }else if(10<=inc && inc <= 18){
+            return 1;
+        }else if(19<=inc){
+            return 2;
+        }
+    }
+})
+</script>
+</head>
+<body>
+<div id="wrapper">
+<div id="textarea"></div>
+<div id="keyboard"></div>
+</div>
+</body>
+</html>
