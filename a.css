@@ -16,20 +16,24 @@
 	position: relative;
 }
 
-#textarea {
+#textarea-wrapper {
 	margin: 0 auto;
 	clear: both;
 	position: relative;
 }
 
-#keyboard {
+#textarea-wrapper textarea {
+    font-size:14px;
+}
+
+#keyboard-wrapper {
 	width: 100%;
     height:200px;
 	margin-top: 50px;
 	position: relative;
 }
 
-*{
+.key , .key *{
 	user-select:none;
     -webkit-user-select:none;
     -moz-user-select:none;
@@ -86,9 +90,7 @@
 .pieConcents {
 	width: 44px;
 	height: 44px;
-	background: rgba(255,255,255,0.8);
 	border-radius: 22px;
-	border: 1px solid #555;
 	position: absolute;
 }
 
@@ -169,7 +171,4 @@
 
 }
 
-.grad_blue:hover{
-	background:white;
-	color:#ff0080;
-}
+

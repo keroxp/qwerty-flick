@@ -7,13 +7,13 @@ var metakeys = ["Command", "Shift", "Space", "Enter", "Delete"];
 var dictionary = {
     "q" : ["q", "くぁ", "くぃ", "く", "くぇ", "くぉ"],
     "w" : ["w", "わ", "うぃ", "う", "うぇ", "を"],
-    "e" : ["e", "え", "", "", "", ""],
+    "e" : ["e", "", "", "", "え", ""],
     "r" : ["r", "ら", "り", "る", "れ", "ろ"],
     "t" : ["t", "た", "ち", "つ", "て", "と"],
     "y" : ["y", "や", "い", "ゆ", "え", "お"],
-    "u" : ["u", "う", "", "", "", ""],
-    "i" : ["i", "い", "", "", "", ""],
-    "o" : ["o", "お", "", "", "", ""],
+    "u" : ["u", "", "", "う", "", ""],
+    "i" : ["i", "", "い", "", "", ""],
+    "o" : ["o", "", "", "", "", "お"],
     "p" : ["p", "ぱ", "ぴ", "ぷ", "ぺ", "ぽ"],
     "a" : ["a", "あ", "", "", "", ""],
     "s" : ["s", "さ", "し", "す", "せ", "そ"],
@@ -55,12 +55,35 @@ var PI = 3.14159265;
 var fadeTime = 200;
 var currentHandlingKey;
 var currentHandlingPie;
+var currentHandlingConcent;
+// テクストエリアオブジェクトの作成
+var textarea = document.createElement("textarea");
+textarea.style.width = (keysize.w + margin.left)*rowHas[0] - margin.left + "px";
+textarea.style.height= "200px";
+    
+HTMLTextAreaElement.prototype.insert = function(chara){
+    var _chara = chara || "";
+    if(this.setSelectionRange){
+        var _pos = {
+            start : this.selectionStart,
+            end   : this.selectionEnd
+        }
+        var _text = this.value.substring(_pos.start,_pos.end);
+        var _prev = this.value.substring(0,_pos.start);
+        var _next = this.value.substring(_pos.end,this.value.length);
+        this.value = _prev + _chara + _next; 
+    }
+    var _newpos = (_prev + _chara).length;
+    this.setSelectionRange(_newpos,_newpos);
+}
+
+
 //メイン処理
 $(document).ready(function(){
     // キーオブジェクトの生成
     var rowNum = rowHas.length;
     var currentChar = 0;
-    var keyboard = document.getElementById("keyboard");
+    var keyboard = document.getElementById("keyboard-wrapper");
 
     for(var i = 0; i < rowNum; i++) {
         for(var j = 0; j < rowHas[i]; j++) {
@@ -72,22 +95,24 @@ $(document).ready(function(){
             currentChar++;
         }
     }
-    // テクストエリアオブジェクトの作成
-    var ta = object(Textarea);
-    ta.init({
-        width : (keysize.w + margin.left)*rowHas[0] - margin.left,
-        height: 200
-    });
-    var textarea = document.getElementById("textarea");
-    textarea.appendChild(ta.dom);
+    var ta = document.getElementById("textarea-wrapper");
+    log(textarea);
+    ta.appendChild(textarea);
 });
 
 //windowにイベントハンドラを付与
 window.onmouseup = function(event){
-    console.log(currentHandlingKey);
-    console.log(currentHandlingPie);
-    if(currentHandlingPie.style.opacity == 1.0){
+    // pieオブジェクトの外でmouseupされても消えるように
+    if(currentHandlingKey && currentHandlingPie){
+        if(currentHandlingConcent){
+            var _concent = currentHandlingConcent;
+            var _chara = _concent.getAttribute("data-key");
+            currentHandlingConcent = null;
+            textarea.insert(_chara);
+        }
         var _this = currentHandlingKey;
+        currentHandlingKey = null;
+        currentHandlingPie = null;
         $(_this.lastChild).animate({
             opacity : 0.0
         },fadeTime,function(){
@@ -264,16 +289,14 @@ dom : null,
           this.dom = document.createElement("div");
           this.chara = document.createElement("div");
           this.chara.innerHTML = _chara;
-          //disaSelect(this.chara);
           this.dom.dataset.key = _chara;
-          //setEventHandler(this.dom,"mouseover",this.onmouseover);
+          this.dom.dataset.type = _type;
           this.dom.onmouseover = this.onmouseover;
-          //setEventHandler(this.dom,"mouseout",this.onmouseout);
           this.dom.onmouseout = this.onmouseout;
           this.dom.appendChild(this.chara);
           switch(_type) {
               case "concent" :
-                  this.dom.className = "pieConcents grad_blue inshadow";
+                  this.dom.className = "pieConcents";
                   this.chara.className = "pieConcentsChar";
                   break;
               case "center" :
@@ -286,27 +309,48 @@ dom : null,
           }
       },
       onmouseover : function(event){
-          log("pie "+this.getAttribute("data-key")+" mouseover");
+          var _type = this.getAttribute("data-type");
+          currentHandlingConcent = this;
+          switch(_type){
+              case "concent" : 
+                $(this).addClass("pieSelected grad_blue inshadow");
+                break;
+              case "center" : 
+                break;
+              default :
+                return false;
+                break
+          }
       },
       onmouseout : function(event){
-          log("pie "+this.getAttribute("data-key")+" mouseout");
+          currentHandlingConcent = null;
+          $(this).removeClass("pieSelected grad_blue inshadow");
       }
 }
 
 var Textarea = {
 dom : null,
       init : function(opts) {
-          var _w = opts.width;
-          var _h = opts.height;
+          var _cols = opts.cols;
+          var _rows = opts.rows;
           this.dom = document.createElement("textarea");
-          this.dom.style.width = _w + "px";
-          this.dom.style.height= _h + "px";
+          this.dom.style.width = _cols + "px";
+          this.dom.rows = _rows;
+          this.dom.id = "textarea";
       },
-insertChar : function(opts) {
-                 var _char = opts.chara || "";
-                 var _location = opts.location || 0;
-                 //適当
-                 this.dom.val += _char;
+insert : function(chara) {
+                 var _chara = chara || "";
+                 if(this.dom.setSelectionRange){
+                     var _pos = {
+                         start : this.dom.selectionStart,
+                         end   : this.dom.selectionEnd
+                     }
+                 }
+                 var _text = this.dom.value.substring(_pos.start,_pos.end);
+                 var _prev = this.dom.value.substring(0,_pos.start);
+                 var _next = this.dom.value.substring(_pos.end,this.dom.valu.length);
+
+                 this.dom.value = _prev + _chara + _next; 
              }
 }
 /*
