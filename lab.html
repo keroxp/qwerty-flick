@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <title></title>
+<link href="a.css" rel="stylesheet" />
 <script type="text/javascript" src="jquery-1.7.1.min.js"></script>
-<script src="qwerty-flick.js"></script>
 <script type="text/javascript">
 $(function() {
         //Initializer.charkeys();
@@ -55,8 +55,23 @@ left: 600px;
 
 <script type="text/javascript">
 $(function(){									
-        dom4();
-        })
+    $.ajax({
+        url : ".git/logs/HEAD",
+        type : "GET",
+        dataType : "text",
+        success : function(data,success,xhr){
+            console.log(data);
+            var comments = data.match(/commit/);
+            console.log(comments.length);
+            var p = document.createElement("p");
+            p.innerHTML = data;
+            document.body.appendChild(p);
+        },
+        complete : function(xhr,status){
+            console.log((status));
+        }
+    })
+})
 function dom1 () {
     var dom = document.createElement("div");
     dom.hoge = function(arg){

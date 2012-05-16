@@ -52,17 +52,15 @@ var margin = {
 };
 
 var PI = 3.14159265;
-
-var keys = {};
+var fadeTime = 200;
+var currentHandlingKey;
+var currentHandlingPie;
 //メイン処理
 $(document).ready(function(){
-    // イベントハンドラの生成
-    var handler = object(EventHandler);
     // キーオブジェクトの生成
     var rowNum = rowHas.length;
     var currentChar = 0;
     var keyboard = document.getElementById("keyboard");
-    keyboard.onselectstart = function(){return false};
 
     for(var i = 0; i < rowNum; i++) {
         for(var j = 0; j < rowHas[i]; j++) {
@@ -84,16 +82,20 @@ $(document).ready(function(){
     textarea.appendChild(ta.dom);
 });
 
-var EventHandler = {
-    keyDidMouseDown : function(event,key){
-    },
-    keyDidMouseUp : function(event,key){
-    },
-    pieDidMouseOver : function(event,pie){
-    },
-    pieDisMouseOut : function(event,pie){
+//windowにイベントハンドラを付与
+window.onmouseup = function(event){
+    console.log(currentHandlingKey);
+    console.log(currentHandlingPie);
+    if(currentHandlingPie.style.opacity == 1.0){
+        var _this = currentHandlingKey;
+        $(_this.lastChild).animate({
+            opacity : 0.0
+        },fadeTime,function(){
+             _this.removeChild(_this.lastChild);
+        })
     }
 }
+
 
 /*
  * Keyboardのスーパークラス
@@ -141,15 +143,16 @@ var Key = {
               this.dom.className = "key dpshadow grad_gray";
               this.dom.id = "key-" + _key;
               this.dom.dataset.key = _key;
-              this.dom.onselectstart = function(){return false};
+              //this.dom.onselectstart = false;
+              //disaSelect(this.dom);
               this.dom.onmousedown = this.onmousedown;
-              this.dom.onmouseup = this.onmouseup;
+              //this.dom.onmouseup = this.onmouseup;
               //this.dom.key = _key;
               //キャラクターのDOMオブジェクトを生成
               this.chara = document.createElement("div");
               this.chara.className = "char";
               this.chara.innerHTML = _key.toUpperCase();
-              this.chara.onselectstart = function(){return false};
+              //disaSelect(this.chara);
               this.dom.appendChild(this.chara);
           } else if(_keylen > 1) {
               this.isMetakey = true;
@@ -173,11 +176,15 @@ var Key = {
           }
       },
       onmousedown : function(event){
+          // 現在扱っているオブジェクトを登録
                 var _key = this.getAttribute("data-key");
                 var p = object(Pie);
                 p.init(_key);
                 // element.offsetTop, element.offsetLeft を正常に取得するために先に追加しておく
                 this.appendChild(p.dom);
+                currentHandlingKey = this;
+                currentHandlingPie = p.dom;
+                
                 // パイメニューのセンタリング
                 p.dom.style.left = p.dom.offsetLeft - (p.dom.offsetWidth / 2 - this.offsetWidth ) - this.offsetWidth / 2 + "px";
                 p.dom.style.top = p.dom.offsetTop - (p.dom.offsetHeight / 2 - this.offsetHeight ) - this.offsetHeight / 2 + "px";
@@ -197,16 +204,7 @@ var Key = {
                 };
                 $(p.dom).animate({
                     opacity : 1.0
-                },200);
-      },
-      onmouseup : function(event){
-          var p = this.lastChild;
-          var _this = this;
-          $(p).animate({
-              opacity : 0.0
-          },200,function(){;
-            _this.removeChild(p);
-          })
+                },fadeTime);
       }
 }
 
@@ -266,6 +264,12 @@ dom : null,
           this.dom = document.createElement("div");
           this.chara = document.createElement("div");
           this.chara.innerHTML = _chara;
+          //disaSelect(this.chara);
+          this.dom.dataset.key = _chara;
+          //setEventHandler(this.dom,"mouseover",this.onmouseover);
+          this.dom.onmouseover = this.onmouseover;
+          //setEventHandler(this.dom,"mouseout",this.onmouseout);
+          this.dom.onmouseout = this.onmouseout;
           this.dom.appendChild(this.chara);
           switch(_type) {
               case "concent" :
@@ -280,6 +284,12 @@ dom : null,
                   return false;
                   break;
           }
+      },
+      onmouseover : function(event){
+          log("pie "+this.getAttribute("data-key")+" mouseover");
+      },
+      onmouseout : function(event){
+          log("pie "+this.getAttribute("data-key")+" mouseout");
       }
 }
 
@@ -341,5 +351,6 @@ var ce = function(elem, attr, inner) {
 }
 var log = function(m) {
     var _m = m;
-    console.log(m);
+    console.log(_m);
 }
+
