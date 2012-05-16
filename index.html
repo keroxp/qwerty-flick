@@ -5,112 +5,12 @@
 		<title>QWERTY-Flick</title>
 		<link rel="stylesheet" href="a.css" />
 		<script src="jquery-1.7.1.min.js"></script>
-		<script src="qwerty-flick.js"></script>
-		<script type="text/javascript">
-			$(function() {
-				Initializer.charkeys();
-				var key = document.getElementById("key_id");
-				var pie = document.getElementById("pie_id");
-				var _char = document.getElementById("char_id");
-				var pieCenter = document.getElementById("pieCenter_id");
-				var pieConcents = document.getElementsByClassName("pieConcents");
-				var PI = 3.14159265;
-
-				pie.style.left = pie.offsetLeft - (pie.offsetWidth / 2 - key.offsetWidth ) - key.offsetWidth / 2 + "px";
-				pie.style.top = pie.offsetTop - (pie.offsetHeight / 2 - key.offsetHeight ) - key.offsetHeight / 2 + "px";
-
-				for(var i = 0; i < pieConcents.length; i++) {
-					pieConcents[i].style.left = pieConcents[i].offsetLeft - (pieConcents[i].offsetWidth / 2 - pie.offsetWidth) - pie.offsetWidth / 2 - 4 + "px";
-					pieConcents[i].style.top = pieConcents[i].offsetTop - (pieConcents[i].offsetHeight / 2 - pie.offsetHeight) - pie.offsetHeight / 2 - 4 + "px";
-					pieConcents[i].style.left = pieConcents[i].offsetLeft + 72 * Math.cos((72 * i - 90) * PI / 180) + "px";
-					pieConcents[i].style.top = pieConcents[i].offsetTop + 72 * Math.sin((72 * i - 90) * PI / 180) + "px";
-				};
-
-				key.onmousedown = function() {
-					$("#" + pie.id).removeClass("hidden");
-					$("#" + pie.id).addClass("show");
-					$("#" + pie.id).animate({
-						opacity : 1.0
-					}, 200);
-				}
-				key.onmouseup = function() {
-					$("#" + pie.id).removeClass("show");
-					$("#" + pie.id).addClass("hidden");
-					$("#" + pie.id).animate({
-						opacity : 0
-					}, 200);
-				}
-				pieConcents[0].onmouseover = function() {
-					this.style.background = "white";
-					this.style.color = "#ff0080";
-				}
-			})
-		</script>
-		<style type="text/css">
-			#key_id {
-				top: 300px;
-				left: 50%;
-			}
-		</style>
+        <script src="qwerty-flick.js"></script> 
 	</head>
 	<body>
-		<script type="text/javascript">
-			$(function(){									
-				var Dom = document.createElement("div");
-				Dom.name = null;
-				Dom.init = function(name){
-					this.name = name;
-				}
-				var d = object(Dom);
-				d.init("yusuke");
-				log(d.name);
-				dd = object(Dom);
-				dd.init("sakurai");
-				log(dd.name);	
-			})
-		</script>
-		<div id="a">
-			<div id="b"></div>
-		</div>
-		<div id="c"></div>
-		<div id="wrapper">
-			<div id="textarea">
-				<div id="key_id" class="key dpshadow grad">
-					<span id="char_id" class="char"> S </span>
-					<div id="pie_id" class="pie grad_black">
-						<div class="pieConcents grad_blue inshadow">
-							<div class="pieConcentsChar">
-								さ
-							</div>
-						</div>
-						<div class="pieConcents grad_blue inshadow">
-							<div class="pieConcentsChar">
-								し
-							</div>
-						</div>
-						<div class="pieConcents grad_blue inshadow">
-							<div class="pieConcentsChar">
-								す
-							</div>
-						</div>
-						<div class="pieConcents grad_blue inshadow">
-							<div class="pieConcentsChar">
-								せ
-							</div>
-						</div>
-						<div class="pieConcents grad_blue inshadow">
-							<div class="pieConcentsChar">
-								そ
-							</div>
-						</div>
-						<div id="pieCenter_id" class="pieCenter grad_gray inshadow">
-							<div class="pieCenterChar">
-								S
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
+	    <div id="wrapper">
+            <header id="header"><h1>QWERT-Flick(β)</h1></header>
+		    <div id="textarea"></div>
 			<div id="keyboard"></div>
 		</div>
 	</body>
