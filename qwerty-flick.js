@@ -32,7 +32,12 @@ var dictionary = {
     "n" : ["n", "な", "に", "ぬ", "ね", "の"],
     "m" : ["m", "ま", "み", "む", "め", "も"],
     "," : [",", "、", "。", "ー", "！", "？"],
-    "." : [".", "", "", "", "", ""]
+    "." : [".", "", "", "", "", ""],
+    "Enter" : ["⏎","","","","",""],
+    "Command" : ["⌘","","","","",""],
+    "Shift" : ["⇧","","","","",""],
+    "Space" : ["","全角","","","",""],
+    "Delete" : ["⌫","","","","",""]
 }
 /*
  * 定数
@@ -53,39 +58,73 @@ var margin = {
 
 var PI = 3.14159265;
 var fadeTime = 200;
+
+// カレントオブジェクト
+
 var currentHandlingKey;
 var currentHandlingPie;
 var currentHandlingConcent;
+var currentHandlingEvent;
 // テクストエリアオブジェクトの作成
 var textarea = document.createElement("textarea");
 textarea.style.width = (keysize.w + margin.left)*rowHas[0] - margin.left + "px";
 textarea.style.height= "200px";
-    
-HTMLTextAreaElement.prototype.insert = function(chara){
-    var _chara = chara || "";
-    if(this.setSelectionRange){
-        var _pos = {
-            start : this.selectionStart,
-            end   : this.selectionEnd
-        }
-        var _text = this.value.substring(_pos.start,_pos.end);
-        var _prev = this.value.substring(0,_pos.start);
-        var _next = this.value.substring(_pos.end,this.value.length);
-        this.value = _prev + _chara + _next; 
-    }
-    var _newpos = (_prev + _chara).length;
-    this.setSelectionRange(_newpos,_newpos);
-}
 
+
+HTMLTextAreaElement.prototype.insertChar = function(chara){
+    var _chara = chara || "";
+    var _pos = this.selectedRange();
+    var _text = this.value;
+    var _prev = _text.substr(0,_pos.s);
+    var _next = _text.substr(_pos.e,_text.length - _pos.end);
+    this.value = _prev + _chara + _next; 
+    var _newpos = (_prev + _chara).length;
+    this.setCaret(_newpos);
+}
+HTMLTextAreaElement.prototype.insertPat = function(pat){
+    var _pat = pat;
+    var _pos = this.selectedRange();
+    var _text = this.value;
+    var _prev = _text.substr(0,_pos.s);
+    var _next = _text.substr(_pos.e,_text.length - _pos.e);
+    this.value = _prev + _pat + _next;
+    var _newpos = (_prev + _pat).length;
+    this.setSelectionRange(_pos.s,(_prev+_pat).length);
+}
+HTMLTextAreaElement.prototype.delete = function(){
+    var _selected = this.selectedStr();
+    var _pos = this.selectedRange();
+    if(_selected.length > 0){
+        this.insertPat("");
+    }else{
+        if(_pos.s > 0){
+            var _text = this.value;
+            var _prev = _text.substr(0,_pos.s - 1);
+            log(_prev);
+            var _next = _text.substr(_pos.e,_text.length - _pos.e);
+            log(_next);
+            this.value = _prev + _next;
+            this.setCaret(_prev.length);
+        }
+    }
+}
+HTMLTextAreaElement.prototype.selectedRange = function(){
+    return {s : this.selectionStart, e: this.selectionEnd}
+}
+HTMLTextAreaElement.prototype.selectedStr = function(){
+    var _pos = this.selectedRange();
+    return this.value.substr(_pos.s,_pos.e - _pos.s)
+}
+HTMLTextAreaElement.prototype.setCaret = function(newpos){
+    this.setSelectionRange(newpos,newpos);
+}
 
 //メイン処理
 $(document).ready(function(){
     // キーオブジェクトの生成
-    var rowNum = rowHas.length;
     var currentChar = 0;
     var keyboard = document.getElementById("keyboard-wrapper");
-
-    for(var i = 0; i < rowNum; i++) {
+    for(var i = 0; i < charkeys.length; i++) {
         for(var j = 0; j < rowHas[i]; j++) {
             var k = object(Key);
             k.init(charkeys[currentChar]);
@@ -95,6 +134,13 @@ $(document).ready(function(){
             currentChar++;
         }
     }
+    //メタキーオブジェクトの生成
+    for(var i = 0 ; i < metakeys.length ; i++){
+        var mk = object(Key);
+        mk.init(metakeys[i]);
+        keyboard.appendChild(mk.dom);
+    }
+
     var ta = document.getElementById("textarea-wrapper");
     log(textarea);
     ta.appendChild(textarea);
@@ -104,11 +150,34 @@ $(document).ready(function(){
 window.onmouseup = function(event){
     // pieオブジェクトの外でmouseupされても消えるように
     if(currentHandlingKey && currentHandlingPie){
+        //キャラクタをインサート
         if(currentHandlingConcent){
             var _concent = currentHandlingConcent;
             var _chara = _concent.getAttribute("data-key");
+            log(_chara);
             currentHandlingConcent = null;
-            textarea.insert(_chara);
+            if(_chara.length <= 2){
+              textarea.insertChar(_chara);
+            }else if(_chara.length > 2){
+                switch(_chara){
+                    case "Delete" :
+                        textarea.delete(); 
+                        break;
+                    case "Shift" :
+                        break;
+                    case "Command" : 
+                        break;
+                    case "Space" : 
+                        textarea.insertChar(" ");
+                        break;
+                    case "Enter" : 
+                        textarea.insertChar("\n");
+                        break;
+                    default :
+                        return false;
+                        break;
+                }
+            }
         }
         var _this = currentHandlingKey;
         currentHandlingKey = null;
@@ -126,21 +195,6 @@ window.onmouseup = function(event){
  * Keyboardのスーパークラス
  */
 
-//ひとつのKeyが持っているべき情報は何か？
-//それ自体へのイベントハンドラ→別クラスで実装してaddEventListener
-//対応する変換コード→initでCCから取得
-//それがメタキーなのか通常キーなのかはinitで設定
-//initの引数で判別か、objc的にセッタで判別
-//Meta Types
-//Command,Shift,Space,Delete,Enter
-//
-//Property List
-
-//string type = Default (Command,Shift,Space,Delete,Enter)
-//string character = null
-//array  pieContents = null
-//boolean isMetakey = false
-
 var Key = {
     // string キーボードの名前
     key : null,
@@ -157,43 +211,52 @@ var Key = {
               // キーの文字と長さを取得。keyがマルチバイト文字だった場合は知らん
           var _key = key;
           var _keylen = key.length;
+          this.key = _key;
+          this.dom = document.createElement("div");
+          this.dom.className = "key dpshadow grad_gray";
+          this.dom.id = "key-" + _key;
+          this.dom.dataset.key = _key;
+          //キャラクターのDOMオブジェクトを生成
+          this.chara = document.createElement("div");
+          this.chara.className = "char";
+          this.chara.innerHTML = _key.toUpperCase();
+          this.dom.appendChild(this.chara);
+          //イベントハンドラを登録
+          this.dom.onmousedown = this.onmousedown;
           //通常キーの場合の処理
           if(_keylen == 1) {
-              //インスタンス変数の初期化
               this.isMetakey = false;
-              this.key = _key;
-              //this.pieContents = dictionary[_key];
-              //DOMオブジェクトを生成
-              this.dom = document.createElement("div");
-              this.dom.className = "key dpshadow grad_gray";
-              this.dom.id = "key-" + _key;
-              this.dom.dataset.key = _key;
-              //this.dom.onselectstart = false;
-              //disaSelect(this.dom);
-              this.dom.onmousedown = this.onmousedown;
-              //this.dom.onmouseup = this.onmouseup;
-              //this.dom.key = _key;
-              //キャラクターのDOMオブジェクトを生成
-              this.chara = document.createElement("div");
-              this.chara.className = "char";
-              this.chara.innerHTML = _key.toUpperCase();
-              //disaSelect(this.chara);
-              this.dom.appendChild(this.chara);
           } else if(_keylen > 1) {
-              this.isMetakey = true;
-              this.key = _key;
-              // とりあえず未実装
               //メタキーの場合の処理
+              this.isMetakey = true;
               switch( _key) {
                   case "Command" :
+                      this.dom.style.left = "0px";
+                      this.dom.style.top = (keysize.h + margin.top)*rowHas.length + "px";
+                      this.chara.innerHTML = "⌘";
                       break;
                   case "Shift" :
+                  this.dom.style.left = keysize.w + margin.left + "px";
+                  this.dom.style.top  = (keysize.h + margin.top)*rowHas.length + "px";
+                    this.dom.style.width = (keysize.w + margin.left)*2 - margin.left + "px";
+                    this.chara.innerHTML = "Shift";
                       break;
                   case "Space" :
+                    this.dom.style.left = (keysize.w + margin.left)*3 + "px";
+                    this.dom.style.top = (keysize.h + margin.top)*rowHas.length + "px";
+                    this.dom.style.width = (keysize.w + margin.left)*5 - margin.left + "px";
                       break;
                   case "Delete" :
+                      this.dom.style.left = (keysize.w + margin.left)*(rowHas[2]-1) + "px";
+                      this.dom.style.top = (keysize.h + margin.top)*rowHas.length + "px";
+                      this.dom.style.width = keysize.w*2 + margin.left + "px";
+                      this.chara.innerHTML = "⌫";
                       break;
                   case "Enter" :
+                      this.dom.style.left = (keysize.w + margin.left)*rowHas[1] + "px";
+                      this.dom.style.top = keysize.h + margin.top + "px";
+                      this.dom.style.height = keysize.h * 2 + margin.top + "px";
+                      this.chara.innerHTML = "⏎";
                       break;
                   default :
                       break;
@@ -201,6 +264,8 @@ var Key = {
           }
       },
       onmousedown : function(event){
+          // カレントイベントに登録
+          currentHandlingEvent = event;
           // 現在扱っているオブジェクトを登録
                 var _key = this.getAttribute("data-key");
                 var p = object(Pie);
@@ -209,6 +274,7 @@ var Key = {
                 this.appendChild(p.dom);
                 currentHandlingKey = this;
                 currentHandlingPie = p.dom;
+                currentHandlingConcent = p.center.dom;
                 
                 // パイメニューのセンタリング
                 p.dom.style.left = p.dom.offsetLeft - (p.dom.offsetWidth / 2 - this.offsetWidth ) - this.offsetWidth / 2 + "px";
@@ -254,7 +320,7 @@ dictionary : null,
              // function イニシャライザ 引数は string のキー
              init : function(key) {
                  var _key = key;
-                 if(_key.length == 1) {
+                 if(_key.length > 0) {
                      //普通のキーの処理
                      this.dictionary = dictionary[_key];
                      this.dom = document.createElement("div");
@@ -267,7 +333,7 @@ dictionary : null,
                          this.concents.push(concent);
                      }
                      var _center = object(PiePiece);
-                     _center.init({chara : _key.toUpperCase(),type : "center"});
+                     _center.init({chara : _key,type : "center"});
                      this.center = _center;
                      for(var i = 0; i < this.concents.length; i++) {
                          this.dom.appendChild(this.concents[i].dom);
@@ -302,12 +368,14 @@ dom : null,
               case "center" :
                   this.dom.className = "pieCenter grad_gray inshadow";
                   this.chara.className = "pieCenterChar";
+                  if(_chara.length > 1)
+                      this.chara.innerHTML = dictionary[_chara][0];
                   break;
               default :
                   return false;
                   break;
           }
-      },
+    },
       onmouseover : function(event){
           var _type = this.getAttribute("data-type");
           currentHandlingConcent = this;
@@ -326,32 +394,6 @@ dom : null,
           currentHandlingConcent = null;
           $(this).removeClass("pieSelected grad_blue inshadow");
       }
-}
-
-var Textarea = {
-dom : null,
-      init : function(opts) {
-          var _cols = opts.cols;
-          var _rows = opts.rows;
-          this.dom = document.createElement("textarea");
-          this.dom.style.width = _cols + "px";
-          this.dom.rows = _rows;
-          this.dom.id = "textarea";
-      },
-insert : function(chara) {
-                 var _chara = chara || "";
-                 if(this.dom.setSelectionRange){
-                     var _pos = {
-                         start : this.dom.selectionStart,
-                         end   : this.dom.selectionEnd
-                     }
-                 }
-                 var _text = this.dom.value.substring(_pos.start,_pos.end);
-                 var _prev = this.dom.value.substring(0,_pos.start);
-                 var _next = this.dom.value.substring(_pos.end,this.dom.valu.length);
-
-                 this.dom.value = _prev + _chara + _next; 
-             }
 }
 /*
  * Utility functions
