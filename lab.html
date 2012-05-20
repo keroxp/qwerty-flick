@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <title></title>
-<link href="a.css" rel="stylesheet" />
-<script type="text/javascript" src="jquery-1.7.1.min.js"></script>
+<link href="css/lab.css" rel="stylesheet" />
+<script type="text/javascript" src="js/jquery-1.7.1.min.js"></script>
 <script type="text/javascript">
 $(function() {
         //Initializer.charkeys();
@@ -44,6 +44,12 @@ pieConcents[0].onmouseover = function() {
     this.style.background = "white";
     this.style.color = "#ff0080";
 }
+var k = document.createElement("div");
+k.inherit(Key);
+console.log(k);
+document.body.appendChild(k);
+k.init("k");
+console.log(k.key);
 })
 </script>
 <style type="text/css">
@@ -52,26 +58,35 @@ pieConcents[0].onmouseover = function() {
 left: 600px;
 }
 </style>
+<script>
+var Key = {
+    key : null,
+    init : function(arg){
+        this.key = arg;
+    }
+}
 
-<script type="text/javascript">
-$(function(){									
-    $.ajax({
-        url : ".git/logs/HEAD",
-        type : "GET",
-        dataType : "text",
-        success : function(data,success,xhr){
-            console.log(data);
-            var comments = data.match(/commit/);
-            console.log(comments.length);
-            var p = document.createElement("p");
-            p.innerHTML = data;
-            document.body.appendChild(p);
-        },
-        complete : function(xhr,status){
-            console.log((status));
+function makeKey(elem){
+    var i;
+    for(i in Key){
+        if(Key.hasOwnProperty(i)){
+            elem[i] = Key[i];
         }
-    })
-})
+    }
+}
+
+Object.prototype.inherit = function(parent){
+    if(typeof parent !== "undefined"){
+        var i;
+        for(i in parent){
+            if(parent.hasOwnProperty(i)){
+                this[i] = parent[i];
+            }
+        }
+    }
+}
+
+
 function dom1 () {
     var dom = document.createElement("div");
     dom.hoge = function(arg){
