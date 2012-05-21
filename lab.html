@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <title></title>
-<link href="a.css" rel="stylesheet" />
-<script type="text/javascript" src="jquery-1.7.1.min.js"></script>
+<link href="css/style.css" rel="stylesheet" />
+<script type="text/javascript" src="js/jquery-1.7.1.min.js"></script>
 <script type="text/javascript">
 $(function() {
         //Initializer.charkeys();
@@ -26,14 +26,19 @@ $(function() {
         pieConcents[i].style.top = pieConcents[i].offsetTop + 72 * Math.sin((72 * i - 90) * PI / 180) + "px";
         };
 
-        key.onmousedown = function() {
+        key.ontouchstart = function(e) {
+            e.preventDefault();
             $("#" + pie.id).removeClass("hidden");
             $("#" + pie.id).addClass("show");
             $("#" + pie.id).animate({
 opacity : 1.0
-}, 200);
+}, 0);
 }
-key.onmouseup = function() {
+key.ontouchmove = function(e) {
+    e.preventDefault();
+}
+key.ontouchend = function(e) {
+    e.preventDefault();
     $("#" + pie.id).removeClass("show");
     $("#" + pie.id).addClass("hidden");
     $("#" + pie.id).animate({
@@ -47,79 +52,25 @@ pieConcents[0].onmouseover = function() {
 })
 </script>
 <style type="text/css">
+body{
+    width:100%;
+    height:100%;
+    margin:0;
+    padding:0;
+}
 #key_id {
-    top: 300px;
-left: 600px;
+left:50%;
+}
+#keyboardd {
+  width:100%;
+  height:352px;
+  position:absolute;
+  bottom:0;
+  background:gray;
 }
 </style>
+<script>
 
-<script type="text/javascript">
-$(function(){									
-    $.ajax({
-        url : ".git/logs/HEAD",
-        type : "GET",
-        dataType : "text",
-        success : function(data,success,xhr){
-            console.log(data);
-            var comments = data.match(/commit/);
-            console.log(comments.length);
-            var p = document.createElement("p");
-            p.innerHTML = data;
-            document.body.appendChild(p);
-        },
-        complete : function(xhr,status){
-            console.log((status));
-        }
-    })
-})
-function dom1 () {
-    var dom = document.createElement("div");
-    dom.hoge = function(arg){
-        alert(arg);
-    }
-    dom.innerHTML = "DOMDOM!";
-    dom.id = "dom";
-    document.body.appendChild(dom);
-    var _dom = document.getElementById("dom");
-    _dom.hoge("DOMDOM");
-}
-function dom2 (){
-    var Dom = document.createElement("div");
-    Dom.hoge = function(arg){
-        alert(arg);
-    }
-    Dom.innerHTML = "DOMDOM!";
-    Dom.id = "dom";
-
-    //var d = Object.create(Dom);
-    var d = object(Dom);
-    console.log(d);
-    document.body.appendChild(d);
-    d.hoge("hoge");
-}
-function dom3 () {
-    var Dom = function Dom (){
-        this.prototype = HTMLElement.prototype;
-        this.id = "hoge";
-        this.hoge = function(){alert("hoge")};
-    }
-    var d = new Dom();
-    d.innerHTML = "DomDom!";
-    console.log(d);
-    document.body.appendChild(d);
-    console.log(d);
-}
-function dom4 (){
-    var Key = {
-name : "Key",
-       func : function(arg){
-           alert(arg);
-       }
-    }
-    var d = object(document.createElement("div"),Key);
-    console.log(d);
-    document.body.appendChild(d);
-}
 function object(o) {
     var f = object.f, i, len, n, prop;
     f.prototype = o;
@@ -136,7 +87,8 @@ object.f = function() {
 </script>
 </head>
 <body>
-<div id="key_id" class="key dpshadow grad">
+<div id="keyboardd">
+<div id="key_id" class="key dpshadow grad_gray">
 <span id="char_id" class="char"> S </span>
 <div id="pie_id" class="pie grad_black">
 <div class="pieConcents grad_blue inshadow">
@@ -172,5 +124,7 @@ S
 </div>
 </div>
 
+
+</div>
 </body>
 </html>
