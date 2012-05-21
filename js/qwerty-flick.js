@@ -164,14 +164,18 @@ rows[0] = ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "delete"]
                 angle += PI * 2;
             }
 
-            if(PI/4 <= angle && angle < PI*3/4){
-                console.log("t");
-            }else if(PI*3/4 <= angle && angle < PI*5/4){
-                console.log("l");
-            }else if(PI*5/4 <= angle && angle < PI*7/4){
-                console.log("b");
-            }else if(angle < PI/4 || PI*7/4 <= angle){
-                console.log("r");
+            var add = -PI/10;
+
+            if(0 + add <= angle && angle < PI*2/5 + add){
+                console.log("2");
+            }else if(PI*2/5 + add <= angle && angle < PI*4/5 + add){
+                console.log("1");
+            }else if(PI*4/5 + add <= angle && angle < PI*6/5 + add){
+                console.log("5");
+            }else if(PI*6/5 + add <= angle && angle < PI*8/5 + add){
+                console.log("4");
+            }else if(PI*8/5 + add <= angle && angle < PI*2 + add){
+                console.log("3");
             }
         }
     },
@@ -289,9 +293,8 @@ var PiePieces = function(key){
         var p = document.createElement("div");
         p.className = "pie-piece";
         p.innerHTML = dict[i+1];
-        p.style.left= 72 * Math.cos((72 * i - 90) * PI / 180) + "px";
-        p.style.top = 72 * Math.sin((72 * i - 90) * PI / 180) + "px";
-        p.style.margin = 0;
+        p.style.left+= 72 * Math.cos((72 * i - 90) * PI / 180) + "px";
+        p.style.top += 72 * Math.sin((72 * i - 90) * PI / 180) + "px";
         ps.push(p);
     }
     return ps;
