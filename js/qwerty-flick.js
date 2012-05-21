@@ -7,38 +7,68 @@ pie : null,
 concent : null,
 event : null
     }
+if(iPad || Android){
+    window.ontouchend = onmouseup;
+    window.ontouchmove= onmousemove;
+}else{
+    window.onmouseup = onmouseup;
+    window.onmousemove=onmousemove;
 }
 // イニシャライザ
 
 window.onload = function(){
 // キーオブジェクトの生成
-        var currentChar = 0;
-        var keyboard = document.getElementById("keyboard-wrapper");
-        for(var i = 0; i < charkeys.length; i++) {
-        for(var j = 0; j < rowHas[i]; j++) {
-        var k = object(Key);
-        k.init(charkeys[currentChar]);
-        k.dom.style.top = i * (keysize.h + margin.top) + "px";
-        k.dom.style.left = j * (keysize.w + margin.left) + "px";
-        keyboard.appendChild(k.dom);
-        currentChar++;
-        }
-        }
-         //メタキーオブジェクトの生成
-         for(var i = 0 ; i < metakeys.length ; i++){
-         var mk = object(Key);
-         mk.init(metakeys[i]);
-         keyboard.appendChild(mk.dom);
-         }
+        var keyboard = document.getElementById("keyboard");
+        var candies = document.getElementById("candies");
 
-         var ta = document.getElementById("textarea-wrapper");
-         log(textarea);
-         ta.appendChild(textarea);
+        var flag  = document.createDocumentFragment();
 
+        for(var i = 0 , max = rows.length ; i < max ; i++){
+            var r = document.createElement("div");
+            r.id = "key-row-" + i;
+            r.className = "key-row";
+            for(var j = 0 , max = rows[i].length ; j < max ; j++){
+                var c = rows[i][j];
+                var k = document.createElement("div");
+                k.id = "key-" + c;
+                k.dataset.key = c;
+                k.className = "key gg ds";
+                var kc =document.createElement("div");
+                kc.className = "key-char";
+                kc.innerHTML = c.toUpperCase();
+                if(c.length > 1){
+                    k.className += " key-meta";
+                    switch(c){
+                        case "shift" : 
+                            k.className += " key-shift";
+                            kc.innerHTML = "⇧";
+                            break;
+                        case "enter" : 
+                            k.className += " key-enter";
+                            break;
+                        case "command" :
+                            k.className += " key-command";
+                            kc.innerHTML=  "⌘"
+                            break;
+                        case "delete":
+                            k.className += " key-delete";
+                            kc.innerHTML = "⌫";
+                            break;
+                        case "space" :
+                            k.className += " key-space";
+                            break;
+                        default :
+                    }
+                }
+                k.appendChild(kc);
+                r.appendChild(k);
+            }
+            keyboard.appendChild(r);
         }
-        // キーボード用辞書
-        var rows = [];
-        rows[0] = ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "delete"]
+}
+// キーボード用辞書
+var rows = [];
+rows[0] = ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "delete"]
         rows[1] = ["a", "s", "d", "f", "g", "h", "j", "k", "l","enter"]
         rows[2] = ["shift","z", "x", "c", "v", "b", "n", "m", ",", ".","-"];
         rows[3] = ["command","space"];
@@ -135,11 +165,7 @@ setCaret : function(newpos){
                this.setSelectionRange(newpos,newpos);
            }
  }
- //メイン処理
- $(document).ready(function(){
-          });
 
- //windowにイベントハンドラを付与
  var onmouseup = function(event){
      // pieオブジェクトの外でmouseupされても消えるように
      if(currentHandlingKey && currentHandlingPie){
