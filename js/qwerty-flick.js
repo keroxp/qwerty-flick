@@ -70,7 +70,6 @@ var textarea = document.createElement("textarea");
 textarea.style.width = (keysize.w + margin.left)*rowHas[0] - margin.left + "px";
 textarea.style.height= "200px";
 
-
 HTMLTextAreaElement.prototype.insertChar = function(chara){
     var _chara = chara || "";
     var _pos = this.selectedRange();
