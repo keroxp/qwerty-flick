@@ -15,20 +15,21 @@ height:100%;
 margin:0;
 padding:0;
 }
-#wrapper {
-width: 980px;
-margin: 0 auto;
-padding: 0;
-position: relative;
+
+#header {
+    width:1024px;
+    margin: 0 auto;
 }
 
 #textarea-wrapper {
+width : 1024px;
 margin: 0 auto;
 clear: both;
 position: relative;
 }
 
 #textarea-wrapper textarea {
+width : 100%;
     font-size:14px;
 }
 
@@ -225,52 +226,51 @@ right: -76px;
        border-left-color:rgba(32,125,229,1);
 }
 
-
-
-
-
 /*
  *  * Pie
  *   */
 
 .pie {
-width: 200px;
-height: 200px;
-        border-radius: 128px;
+width: 250px;
+height: 250px;
+border-radius: 128px;
 border: 3px solid #ccc;
 background: rgba(0,0,0,0.4);
 position: absolute;
-opacity:0;
-        z-index:9999;
+top:50%;
+margin-top:-125px;
+left:50%;
+margin-left:-125px;
+z-index:9999;
 }
 
-.pieCenter {
-width: 82px;
-height: 82px;
-margin: 57px;
-        border-radius: 42px;
+.pie-char {
+width: 85px;
+height: 85px;
+font-size:36px;
+border-radius: 42px;
 border: 2px solid #ccc;
-position:relative;
+position:absolute;:
+text-align:center;
 background: rgba(255,255,255,1);
+top:50%;
+margin-top:-41px;
+left:50%;
+margin-left:-41px;
 }
 
-.pieCenter .pieCenterChar {
-position:absolute;
-         font-size: 36px;
-}
-
-.pieConcents {
+.pie-piece {
 width: 44px;
 height: 44px;
-        border-radius: 22px;
+border-radius: 22px;
 position: absolute;
-}
-
-.pieConcents .pieConcentsChar {
+top:50%;
+left:50%;
+margin-top:-22px;
+margin-left:-22px;
 color: white;
-       text-shadow: 0px 0px 4px black;
-       font-size: 18px;
-position:absolute;
+text-shadow: 0px 0px 4px black;
+font-size: 24px;
 }
 
 /*
@@ -332,7 +332,7 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#a4a8b2', end
 }
 
 
-.grad_black {
+.gbl {
 background: -moz-linear-gradient(top,  rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.8) 100%); /* FF3.6+ */
 background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(0,0,0,0.5)), color-stop(100%,rgba(0,0,0,0.8))); /* Chrome,Safari4+ */
 background: -webkit-linear-gradient(top,  rgba(0,0,0,0.5) 0%,rgba(0,0,0,0.8) 100%); /* Chrome10+,Safari5.1+ */
