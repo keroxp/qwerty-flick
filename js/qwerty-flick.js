@@ -1,12 +1,12 @@
 (function(){
-    // メインイベントメディエータであるwindowオブジェクトの拡張
-    // 現在担当しているイベント情報の格納庫
+ // メインイベントメディエータであるwindowオブジェクトの拡張
+ // 現在担当しているイベント情報の格納庫
  window.current = { 
 key : null,
 pie : null,
 concent : null,
 event : null
-    }
+}
 // イニシャライザ
 
 window.onload = function(){
