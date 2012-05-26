@@ -135,22 +135,21 @@ var Textarea = function(){
 
  var handler = {
     ondown : function(e){
-                 e.preventDefault();
-                 // Pieオブジェクトを作成
-                 var key = this.getAttribute("data-key");
-                 var p = Pie(key);
-                 this.appendChild(p);
-                 this.pie = p;
-                 for(var i = 0 , max = p.pieces.length ; i < max ; i++){
-                     p.pieces[i].style.left = p.pieces[i].offsetLeft - (p.pieces[i].offsetWidth / 2 - p.offsetWidth) - p.offsetWidth / 2 - 4 + "px";
-                     p.pieces[i].style.top  = p.pieces[i].offsetTop - (p.pieces[i].offsetHeight / 2 - p.offsetHeight) - p.offsetHeight / 2 - 4  + "px";
-                     p.pieces[i].style.left = p.pieces[i].offsetLeft + 70 * Math.cos((72 * i - 90) * PI / 180) + "px";
-                     p.pieces[i].style.top  = p.pieces[i].offsetTop  + 70 * Math.sin((72 * i - 90) * PI / 180) + "px";
-                 }
-                 // カレントoオブジェクトを登録
-                 window.current.event = e;
-                 window.current.key = this;
-                 window.current.pie  = p;
+         e.preventDefault(); // Pieオブジェクトを作成
+         var key = this.getAttribute("data-key");
+         var p = Pie(key);
+         this.appendChild(p);
+         this.pie = p;
+         for(var i = 0 , max = p.pieces.length ; i < max ; i++){
+             p.pieces[i].style.left = p.pieces[i].offsetLeft - (p.pieces[i].offsetWidth / 2 - p.offsetWidth) - p.offsetWidth / 2 - 4 + "px";
+             p.pieces[i].style.top  = p.pieces[i].offsetTop - (p.pieces[i].offsetHeight / 2 - p.offsetHeight) - p.offsetHeight / 2 - 4  + "px";
+             p.pieces[i].style.left = p.pieces[i].offsetLeft + 70 * Math.cos((72 * i - 90) * PI / 180) + "px";
+             p.pieces[i].style.top  = p.pieces[i].offsetTop  + 70 * Math.sin((72 * i - 90) * PI / 180) + "px";
+         }
+         // カレントoオブジェクトを登録
+         window.current.event = e;
+         window.current.key = this;
+         window.current.pie  = p;
     },
     onmove : function(e){
         e.preventDefault();
@@ -158,42 +157,38 @@ var Textarea = function(){
             var cpp, 
                 dx = e.pageX - window.current.event.pageX,
                 dy = -(e.pageY - window.current.event.pageY),
-                angle = Math.atan2(dy,dx),
-                add = -PI/10;
-
-            if(!window.current.piece)
-                window.current.piece = window.current.pie.pieces[1];
+                angle = Math.atan2(dy,dx);
 
             if(angle < 0 ){
                 angle += PI * 2;
             }
 
-            if(0 + add <= angle && angle < PI*2/5 + add){
+            if((0 <= angle && angle < PI*3/10) || (PI*19/10 <= angle && angle <= PI*2)){
                 // 右上
                 cpp = window.current.pie.pieces[1];
-            }else if(PI*2/5 + add <= angle && angle < PI*4/5 + add){
+            }else if(PI*3/10  <= angle && angle < PI*7/10 ){
                 // 上
                 cpp = window.current.pie.pieces[0];
-            }else if(PI*4/5 + add <= angle && angle < PI*6/5 + add){
+            }else if(PI*7/10  <= angle && angle < PI*11/10 ){
                 // 左上
                 cpp = window.current.pie.pieces[4];
-            }else if(PI*6/5 + add <= angle && angle < PI*8/5 + add){
+            }else if(PI*11/10  <= angle && angle < PI*15/10 ){
                 // 左下
                 cpp = window.current.pie.pieces[3];
-            }else if(PI*8/5 + add <= angle && angle < PI*2 + add){
+            }else if(PI*15/10  <= angle && angle < PI*19/10 ){
                 // 右下
                 cpp = window.current.pie.pieces[2];
             }
 
+            // 一番最初の場合の処理
+            if(!window.current.piece)
+                window.current.piece = cpp;
+
             if(cpp !== window.current.piece){
-                log(window.current.piece);
-                var cn = window.current.piece.className;
-                cn.replace(" gbv","");
-                window.current.piece.className = cn;
+                window.current.piece.className = "pie-piece";
                 cpp.className += " gbv";
                 window.current.piece = cpp;
             }
-            window.current.piece = cpp;
         }
     },
     onup : function(e){
