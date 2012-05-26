@@ -24,7 +24,7 @@ window.onload = function(){
         for(var i = 0 , max = rows.length ; i < max ; i++){
             var r = document.createElement("div");
             r.id = "key-row-" + i;
-            r.className = "key-row";
+            r.className = "key-row clearfix";
             for(var j = 0 , max = rows[i].length ; j < max ; j++){
                 var c = rows[i][j];
                 var k = Key(c);
@@ -43,15 +43,15 @@ rows[3] = ["command","space"];
 var dictionary = {
     "q" : ["q", "くぁ", "くぃ", "く", "くぇ", "くぉ"],
     "w" : ["w", "わ", "うぃ", "う", "うぇ", "を"],
-    "e" : ["e", "", "", "", "え", ""],
+    "e" : ["e", "え", "え", "え", "え", "え"],
     "r" : ["r", "ら", "り", "る", "れ", "ろ"],
     "t" : ["t", "た", "ち", "つ", "て", "と"],
     "y" : ["y", "や", "い", "ゆ", "え", "お"],
-    "u" : ["u", "", "", "う", "", ""],
-    "i" : ["i", "", "い", "", "", ""],
-    "o" : ["o", "", "", "", "", "お"],
+    "u" : ["u", "う", "う", "う", "う", "う"],
+    "i" : ["i", "い", "い", "い", "い", "い"],
+    "o" : ["o","お", "お", "お", "お", "お"],
     "p" : ["p", "ぱ", "ぴ", "ぷ", "ぺ", "ぽ"],
-    "a" : ["a", "あ", "", "", "", ""],
+    "a" : ["a", "あ", "あ", "あ", "あ", "あ"],
     "s" : ["s", "さ", "し", "す", "せ", "そ"],
     "d" : ["d", "だ", "ぢ", "づ", "で", "ど"],
     "f" : ["f", "ふぁ", "ふぃ", "ふ", "ふぇ", "ふぉ"],
@@ -85,8 +85,8 @@ var Android = (navigator.userAgent.indexOf("Android") < 0 ) ? false : true;
 //テクストエリアオブジェクトを生成する関数
 var Textarea = function(){
     var t = document.createElement("textarea");
-    t.insertChar = function(chara){
-        var chara = chara || "",
+    t.insertChar = function(c){
+        var chara = c || "",
             pos = this.selectedRange(),
             text = this.value,
             prev = text.substr(0,pos.s),
@@ -150,6 +150,7 @@ var Textarea = function(){
          window.current.event = e;
          window.current.key = this;
          window.current.pie  = p;
+         window.current.piece = p.center;
     },
     onmove : function(e){
         e.preventDefault();
@@ -180,12 +181,14 @@ var Textarea = function(){
                 cpp = window.current.pie.pieces[2];
             }
 
-            // 一番最初の場合の処理
-            if(!window.current.piece)
-                window.current.piece = cpp;
-
+//            if(window.current.piece.className.indexOf("piece") < 0) {
+//                window.current.piece = cpp;
+//            }
+//
             if(cpp !== window.current.piece){
-                window.current.piece.className = "pie-piece";
+                if(window.current.piece.className.indexOf("pie-piece") > -1) {
+                    window.current.piece.className = "pie-piece";
+                }
                 cpp.className += " gbv";
                 window.current.piece = cpp;
             }
@@ -194,7 +197,7 @@ var Textarea = function(){
     onup : function(e){
             if(window.current.event){
                 //キャラクタをインサート
-                if(window.current.piece){
+                if(window.current.pie){
                     var piece = window.current.piece,
                         chara = piece.getAttribute("data-key");
                     log(chara);
@@ -202,20 +205,21 @@ var Textarea = function(){
                         textarea.insertChar(chara);
                     }else if(chara.length > 2){
                         switch(chara){
-                            case "Delete" :
-                                textarea.delete(); 
+                        case "delete" :
+                            log("delete");
+                            textarea.delete(); 
+                        break;
+                        case "shift" :
                             break;
-                            case "Shift" :
-                                break;
-                            case "Command" : 
-                                break;
-                            case "Space" : 
-                                textarea.insertChar(" ");
+                        case "command" : 
                             break;
-                            case "Enter" : 
-                                textarea.insertChar("\n");
+                        case "space" : 
+                            textarea.insertChar(" ");
                             break;
-                            default :
+                        case "enter" : 
+                            textarea.insertChar("\n");
+                            break;
+                        default :
                             return false;
                             break;
                         }
@@ -285,18 +289,24 @@ var Key = function(c){
 }
 
 var Pie = function(c){
-    var p = document.createElement("div");
+    var p = document.createElement("div"),
+        pc = document.createElement("div"),
+        ps = PiePieces(c);
+
     p.className = "pie gbl";
-    var pc =document.createElement("div");
+
     pc.className = "pie-char";
     pc.dataset.key = c;
     pc.innerHTML = c;
-    var ps = PiePieces(c);
-    p.pieces = ps;
     p.appendChild(pc);
+
+    p.center = pc;
+
     for(var i = 0 , max = ps.length ; i < max ; i++){
         p.appendChild(ps[i]);
     }
+    p.pieces = ps;
+
     return p;
 }
 
