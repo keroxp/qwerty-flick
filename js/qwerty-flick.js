@@ -3,72 +3,47 @@
     var QWERTY,
     // Classes
     Textarea,
-    Key, 
+    Keyboard,
+    Candies,
+    Key,
     Pie,
     PiePiece,
+    Handler,
     // Data
     rows = [],
     dictionary = {},
     // Constants
     PI = 0.0,
     iPad   = false,
-    Android = false
-    // Helper objects
-    handler = {
-        window : {
-            ondown : function(e){},
-            onmove : function(e){},
-            onup   : function(e){}
-        },
-        keyboard : {
-            ondown : function(e){},
-            onmove : function(e){},
-            onup   : function(e){}
-
-        },
-        key : {
-            ondown : function(e){},
-            onmove : function(e){},
-            onup   : function(e){}
-        }
-    },
-    current = {
-        event : null,
-        key : null,
-        pie : null,
-        piece : null
-    },
+    Android = false,
+    // Helper objectas ( an interface of event handlers);
+    current = {},
     // Helper functions
     addListener = function(type,obj,fn){},
     stopEvent   = function(event){},
     log         = function(text){};
-    // メインイベントメディエータであるwindowオブジェクトの拡張
-    // イニシャライザ
+    // Initializer 
     $(function(){
-        //textareaオブジェクトの生成
+        // private vars
         var MAIN,
-        textarea = Textarea(), 
-        keyboard = document.getElementById("keyboard"),
-        candies = document.getElementById("candies"),
+        textarea = $.extend($("#textarea")[0], Textarea).init(), 
+        keyboard = $.extend($("#keyboard")[0], Keyboard).init(),
+        candies =  $.extend($("#candies")[0],  Candies).init(),
         maxes = [],
         i, j, row, char, key;
 
-        addListener("down",window,handler.window.ondown);
-        addListener("move",window,handler.window.onmove);
-        addListener("up"  ,window,handler.window.onup);
-
-        textarea.id = "textarea";
-        textarea.disabled = "disabled";
-        document.getElementById("textarea-wrapper").appendChild(textarea);
+        addListener("down", window, Handler.window.ondown);
+        addListener("move", window, Handler.window.onmove);
+        addListener("up"  , window, Handler.window.onup);
 
         // keyboardオブジェクトの生成
         for(i = 0 , maxes[0] = rows.length ; i < maxes[0] ; i++){
-            row = document.createElement("div");
+            row = div(); 
             row.id = "key-row-" + i;
             row.className = "key-row clearfix";
             for(j = 0 , maxes[1] = rows[i].length ; j < maxes[1] ; j++){
                 char = rows[i][j];
-                key = Key(char);
+                key = $.extend(div(),Key,Handler.key).init(char);
                 row.appendChild(key);
             }
             keyboard.appendChild(row);
@@ -76,11 +51,11 @@
     });
     // キー配列
     rows = [];
+    rows[0] = ["1","2","3","4","5","6","7","8","9","0"];
     rows[1] = ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "delete"]
     rows[2] = ["a", "s", "d", "f", "g", "h", "j", "k", "l","enter"]
     rows[3] = ["shift","z", "x", "c", "v", "b", "n", "m", ",", ".","-"];
     rows[4] = ["command","space","num"];
-    rows[0] = ["1","2","3","4","5","6","7","8","9","0"];
 
     // パイメニュー
     dictionary = {
@@ -126,15 +101,144 @@
     iPad = (navigator.userAgent.indexOf("iPad") < 0 ) ?  false : true;
     Android = (navigator.userAgent.indexOf("Android") < 0 ) ? false : true;
 
-    // 現在担当しているイベント情報の格納庫
-    current = {
-        key : null,
-        pie : null,
-        piece : null,
-        event : null
+    // @implementation of Keyboard
+
+    Keyboard = {
+        init : function(){
+            return this;
+        }
     };
 
-    handler = {
+    // @implementation of Candies
+
+    Candies = {
+        init : function(){
+            return this;
+        }
+    };
+
+    // @implementation of Textarea
+
+    Textarea = {
+        init : function(){
+            this.id = "textarea";
+            this.disabled = "disabled";
+            addListener("down", this, Handler.textarea.ondown);
+            addListener("move", this, Handler.textarea.onmove);
+            addListener("up"  , this, Handler.textarea.onup);
+            return this;
+        },
+        insertChar : function(c){
+            var chara = c || "",
+            pos = this.selectedRange(),
+            text = this.value,
+            prev = text.substr(0,pos.s),
+            next = text.substr(pos.e,text.length - pos.end),
+            newpos = (prev + chara).length;
+            this.value = prev + chara + next; 
+            this.setCaret(newpos);
+        },
+        insertPat : function(pat){
+            var pat = pat,
+            pos = this.selectedRange(),
+            text = this.value,
+            prev = text.substr(0, pos.s),
+            next = text.substr(pos.e, text.length - pos.e),
+            newpos = (prev + pat).length;
+            this.value = prev + pat + next;
+            this.setSelectionRange(pos.s,(prev+pat).length);
+        },
+        delete : function(){
+            var selected = this.selectedStr(),
+            pos = this.selectedRange(),
+            text = this.value,
+            prev = text.substr(0, pos.s - 1),
+            next = text.substr(pos.e, text.length - pos.e);
+            if(selected.length > 0){
+                this.insertPat("");
+            }else{
+                if(pos.s > 0){
+                    this.value = prev + next;
+                    this.setCaret(prev.length);
+                }
+            }
+        },
+        selectedRange : function(){
+            return {s : this.selectionStart, e: this.selectionEnd}
+        },
+        selectedStr : function(){
+            var pos = this.selectedRange(),
+                text = this.value;
+            return text.substr(pos.s,poe.e-pos.s);
+        },
+        setCaret : function(newpos){
+            this.setSelectionRange(newpos,newpos);
+        },
+        autoCorrecti : function(e) {
+        }
+    };
+
+    // @implementation of Key
+    Key = {
+        init : function(c){
+            this.id = "key-" + c;
+            this.dataset.key = c;
+            this.className = "key gg ds";
+
+            addListener("down", this, Handler.key.ondown);
+            addListener("move", this, Handler.key.onmove);
+            addListener("up"  , this, Handler.key.onup);
+
+            // when this is meta key
+            if(c.length > 1){
+                this.classname += " key-" + c;
+            };  
+
+            // setup child node
+            this.char = div();
+            this.char.className = "key-char";
+            this.char.innerHTML = c.toUpperCase();
+            this.appendChild(this.char);
+
+            return this;
+        },
+        char : {},
+    };
+
+    // @implementation of Pie
+    Pie = {
+        init : function(c) {
+            this.className = "pie gbl";
+
+            this.center = div();
+            this.center.className = "pie-char";
+            this.center.dataset.key = c;
+            this.center.innerHTML = c;
+            this.appendChild(this.center);
+
+            for(var i = 0, max = 5, p = {} ; i < max ; i++){
+                p = $.extend(div(),PiePiece).init(c,i);
+                this.pieces.push(p);
+                this.appendChild(p);
+            }
+            return this;
+        },
+        center : {},
+        pieces : []
+    }
+
+    // @implementation of PiePiece
+    PiePiece = {
+        init : function(key,index) {
+            this.className = "pie-piece";
+            this.dataset.key = dictionary[key][index+1];
+            this.innerHTML = dictionary[key][index+1];
+            return this;
+        }
+    }
+
+    // @implementation of Handler
+    Handler = {
         window : {
             ondown : function(e){
                 e.preventDefault(); 
@@ -229,41 +333,33 @@
             ondown : function(e) {
                 e.preventDefault();
                 var key = this.getAttribute("data-key"),
-                    className = this.className;
-                // 凹ませる
+                p = $.extend(div(),Pie).init(key),
+                i,max;
+
+                 // 凹ませる
                 $(this).removeClass("gg").addClass("ggr");
+                this.appendChild(p);
+                this.pie = p;
+                for(i = 0 , max = p.pieces.length ; i < max ; i++){
+                    p.pieces[i].style.left = p.pieces[i].offsetLeft - (p.pieces[i].offsetWidth / 2 - p.offsetWidth) - p.offsetWidth / 2 - 4 + "px";
+                    p.pieces[i].style.top  = p.pieces[i].offsetTop - (p.pieces[i].offsetHeight / 2 - p.offsetHeight) - p.offsetHeight / 2 - 4  + "px";
+                    p.pieces[i].style.left = p.pieces[i].offsetLeft + 70 * Math.cos((72 * i - 90) * PI / 180) + "px";
+                    p.pieces[i].style.top  = p.pieces[i].offsetTop  + 70 * Math.sin((72 * i - 90) * PI / 180) + "px";
+                }
                 // カレントオブジェクトを登録
+                current.pie  = p;
+                current.piece = p.center;
                 current.event = e;
                 current.key   = this;
+
+                console.log(current);
             },
             onmove : function(e) {
                 // タップが発生し、かつ動いた場合
-                if(current.event){
-                    if(e.srcElement === current.event.srcElement && !current.pie){
-                        // Pieオブジェクトを作成
-                        var key = this.getAttribute("data-key"),
-                        p = Pie(key),
-                        i,max;
-                        this.appendChild(p);
-                        this.pie = p;
-                        for(i = 0 , max = p.pieces.length ; i < max ; i++){
-                            p.pieces[i].style.left = p.pieces[i].offsetLeft - (p.pieces[i].offsetWidth / 2 - p.offsetWidth) - p.offsetWidth / 2 - 4 + "px";
-                            p.pieces[i].style.top  = p.pieces[i].offsetTop - (p.pieces[i].offsetHeight / 2 - p.offsetHeight) - p.offsetHeight / 2 - 4  + "px";
-                            p.pieces[i].style.left = p.pieces[i].offsetLeft + 70 * Math.cos((72 * i - 90) * PI / 180) + "px";
-                            p.pieces[i].style.top  = p.pieces[i].offsetTop  + 70 * Math.sin((72 * i - 90) * PI / 180) + "px";
-                        }
-                        // カレントオブジェクトを登録
-                        current.pie  = p;
-                        current.piece = p.center;
-                    }
-                }else{
-                    stopEvent(e);
-                }
-            },
+           },
             onup   : function(e) {
                 var key = this.getAttribute("data-key"),
                     pos = (e.changedTouches) ? {x : e.changedTouches[0].pageX , y : e.changedTouches[0].pageY } : {x : e.pageX , y : e.pageY };
-                if(Math.abs(pos.x - current.event.pageX) < 10 && Math.abs(pos.y -  current.event.pageY) < 10){
                     switch(key){
                         case "num" :
                             if($(this).hasClass("open")){
@@ -281,151 +377,18 @@
                             textarea.insertChar(" ");
                             break;
                         default :
-                            textarea.insertChar(this.getAttribute("data-key"));
+//                            textarea.insertChar(this.getAttribute("data-key"));
                     }
-                    current.event = null;
                     $(this).removeClass("ggr").addClass("gg");
-                    stopEvent(e);
-                }
             }
+        },
+        textarea : {
+            ondown : function(e){},
+            onmove : function(e){},
+            onup   : function(e){}
         }
     };
 
-    //テクストエリアオブジェクトを生成する関数
-    Textarea = function(){
-        var t = document.createElement("textarea");
-        t.insertChar = function(c){
-            var chara = c || "",
-            pos = this.selectedRange(),
-            text = this.value,
-            prev = text.substr(0,pos.s),
-            next = text.substr(pos.e,text.length - pos.end),
-            newpos = (prev + chara).length;
-            this.value = prev + chara + next; 
-            this.setCaret(newpos);
-        };
-        t.insertPat = function(pat){
-            var pat = pat,
-            pos = this.selectedRange(),
-            text = this.value,
-            prev = text.substr(0, pos.s),
-            next = text.substr(pos.e, text.length - pos.e),
-            newpos = (prev + pat).length;
-            this.value = prev + pat + next;
-            this.setSelectionRange(pos.s,(prev+pat).length);
-        };
-        t.delete = function(){
-            var selected = this.selectedStr(),
-            pos = this.selectedRange(),
-            text = this.value,
-            prev = text.substr(0, pos.s - 1),
-            next = text.substr(pos.e, text.length - pos.e);
-            if(selected.length > 0){
-                this.insertPat("");
-            }else{
-                if(pos.s > 0){
-                    this.value = prev + next;
-                    this.setCaret(prev.length);
-                }
-            }
-        };
-        t.selectedRange = function(){
-            return {s : this.selectionStart, e: this.selectionEnd}
-        };
-        t.selectedStr = function(){
-            var pos = this.selectedRange();
-            return this.value.substr(pos.s,pos.e - pos.s)
-        };
-        t.setCaret = function(newpos){
-            this.setSelectionRange(newpos,newpos);
-        };
-        return t;
-    }
-
-    // Keyオブジェクトを生成する関数
-    Key = function(c){
-        var k = document.createElement("div"),
-        kc =document.createElement("div");
-        k.id = "key-" + c;
-        k.dataset.key = c;
-        k.className = "key gg ds";
-
-        kc.className = "key-char";
-        kc.innerHTML = c.toUpperCase();
-
-        addListener("down", k, handler.key.ondown);
-        addListener("move", k, handler.key.onmove);
-        addListener("up",   k, handler.key.onup);
-
-        if(c.length > 1){
-            k.className += " key-meta";
-            switch(c){
-                case "shift" : 
-                    k.className += " key-shift";
-                    kc.innerHTML = "⇧";
-                    break;
-                case "enter" : 
-                    k.className += " key-enter";
-                    break;
-                case "command" :
-                    k.className += " key-command";
-                    kc.innerHTML=  "⌘"
-                    break;
-                case "delete":
-                    k.className += " key-delete";
-                    kc.innerHTML = "⌫";
-                    break;
-                case "space" :
-                    k.className += " key-space";
-                    break;
-                case "num" :
-                    k.className += " key-num";
-                    break;
-                default :
-            }
-        }
-        k.appendChild(kc);
-        return k;
-    }
-
-    // Pieオブジェクトの生成関数
-
-    Pie = function(c){
-        var p = document.createElement("div"),
-        pc = document.createElement("div"),
-        ps = PiePieces(c);
-
-        p.className = "pie gbl";
-
-        pc.className = "pie-char";
-        pc.dataset.key = c;
-        pc.innerHTML = c;
-        p.appendChild(pc);
-
-        p.center = pc;
-
-        for(var i = 0 , max = ps.length ; i < max ; i++){
-            p.appendChild(ps[i]);
-        }
-        p.pieces = ps;
-
-        return p;
-    }
-
-    // PiePieceオブジェクトの生成関数
-
-    PiePieces = function(key){
-        var ps = [],
-        dict = dictionary[key];
-        for(var i = 0 , max = 5 ; i < max ; i++){
-            var p = document.createElement("div");
-            p.className = "pie-piece";
-            p.dataset.key = dict[i+1];
-            p.innerHTML = dict[i+1];
-            ps.push(p);
-        }
-        return ps;
-    }
 
     // Utility functions
 
@@ -471,6 +434,10 @@
                 return false;
         }
     }
+
+    div = function(){
+        return document.createElement("div");
+    };
 
     log = function(m) {
         var _m = m;
