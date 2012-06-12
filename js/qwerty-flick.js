@@ -1,14 +1,19 @@
 (function(){
     // @interface
     var QWERTY,
-    // Classes
+    // UI Classes
     Textarea = {},
-    Keyboard = {},
     Candies  = {},
+    Keyboard = {},
+    Row      = {},
     Key      = {},
+    KeyChar  = {},
     Pie      = {},
+    PieCenter= {},
     PiePiece = {},
+    // Controller Classes
     Handler  = {},
+    AutoCorecctor = {},
     // Data
     rows = [],
     dictionary = {},
@@ -16,7 +21,7 @@
     PI = 0.0,
     iPad   = false,
     Android = false,
-    // Helper objectas ( an interface of event handlers);
+    // Helper objectas ( an interface of event handlers)
     current = {},
     // Helper functions
     addListener = function(type,obj,fn){},
@@ -25,11 +30,12 @@
     $(function(){
         // private vars
         var MAIN,
+        // instances
         textarea = {},
         keyboard = {},
         candies  = {},
-        maxes = [],
-        i, j, row, char, key;
+        row = {},
+        key = {};
 
         // Extend DOM objects to UI objects (actually, we instantiate UI Objects which inherit from HTMLDivElement object) 
         textarea = $.extend($("#textarea")[0], Textarea).init(); 
@@ -42,27 +48,30 @@
         addListener("up"  , window, Handler.window.onup);
 
         // Setup keys for keyboard
-        for(i = 0 , maxes[0] = rows.length ; i < maxes[0] ; i++){
-            row = div(); 
-            row.id = "key-row-" + i;
-            row.className = "key-row clearfix";
-            for(j = 0 , maxes[1] = rows[i].length ; j < maxes[1] ; j++){
-                char = rows[i][j];
-                key = $.extend(div(),Key,Handler.key).init(char);
+        for(var i = 0 ; i < rows.length ; i++){
+            // Instantiate Row object for each row of keyboard
+            row = $.extend(div(),Row).init(i);
+            for(var j = 0 ; j < rows[i].length ; j++){
+                // Instantiate Key object
+                key = $.extend(div(),Key,Handler.key).init(rows[i][j]);
+                // Add reference with parent node and append it to DOM tree
+                row.keys.push(key);
                 row.appendChild(key);
             }
+            // Add reference with parent node and append it to DOM tre
+            keyboard.rows.push(row);
             keyboard.appendChild(row);
         }
     });
-    // キー配列
-    rows = [];
+
+    // Data for each rows of keyboard
     rows[0] = ["1","2","3","4","5","6","7","8","9","0"];
     rows[1] = ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "delete"]
     rows[2] = ["a", "s", "d", "f", "g", "h", "j", "k", "l","enter"]
     rows[3] = ["shift","z", "x", "c", "v", "b", "n", "m", ",", ".","-"];
     rows[4] = ["command","space","num"];
 
-    // パイメニュー
+    // Data for Pie Menu 
     dictionary = {
         "1" : {center : "1", pieces : [] },
         "2" : {center : "2", pieces : [] },
@@ -112,61 +121,47 @@
     };
 
     // Constants
-
     PI = 3.14159265;
     iPad = (navigator.userAgent.indexOf("iPad") < 0 ) ?  false : true;
     Android = (navigator.userAgent.indexOf("Android") < 0 ) ? false : true;
 
-    // @implementation of Keyboard
-
-    Keyboard = {
-        init : function(){
-            return this;
-        }
-    };
-
-    // @implementation of Candies
-
-    Candies = {
-        init : function(){
-            return this;
-        }
-    };
-
     // @implementation of Textarea
-
     Textarea = {
         init : function(){
+            var $this = $(this);
+
             this.id = "textarea";
             this.disabled = "disabled";
             if(iPad || Android){
-                $(this).on("touchstart.qwerty", Handler.textarea.ondown); 
+                $this.on("touchstart.qwerty", Handler.textarea.ondown); 
+                $this.on("touchmove.qwerty" , Handler.textarea.onmove);
+                $this.on("touchend.qwerty"  , Handler.text.onup);
             }else{
-                $(this).on("mousedown.qwerty", Handler.textarea.ondown);
+                $this.on("mousedown.qwerty", Handler.textarea.ondown);
+                $this.on("mousemove.qwerty", Handler.textarea.onmove);
+                $this.on("mouseup.qwerty"  , Handler.textarea.onup);
             }
-            $(this).on("delete.qwerty" , this.delete);
-            $(this).on("textchanged.qwerty" , AutoCorrector.onchange);
-            addListener("move", this, Handler.textarea.onmove);
-            addListener("up"  , this, Handler.textarea.onup);
+            $this.on("delete.qwerty" , this.delete);
+            $this.on("textchanged.qwerty" , AutoCorrector.onchange);
             return this;
         },
-        insertChar : function(c){
-            var chara = c || "",
-            pos = this.selectedRange(),
+        insertChar : function(char){
+            var pos = this.selectedRange(),
             text = this.value,
             prev = text.substr(0,pos.s),
             next = text.substr(pos.e,text.length - pos.end),
-            newpos = (prev + chara).length;
-            this.value = prev + chara + next; 
+            newpos = (prev + char).length;
+
+            this.value = prev + char + next; 
             this.setCaret(newpos);
         },
         insertPat : function(pat){
-            var pat = pat,
-            pos = this.selectedRange(),
+            var pos = this.selectedRange(),
             text = this.value,
             prev = text.substr(0, pos.s),
             next = text.substr(pos.e, text.length - pos.e),
             newpos = (prev + pat).length;
+
             this.value = prev + pat + next;
             this.setSelectionRange(pos.s,(prev+pat).length);
         },
@@ -176,6 +171,7 @@
             text = this.value,
             prev = text.substr(0, pos.s - 1),
             next = text.substr(pos.e, text.length - pos.e);
+
             if(selected.length > 0){
                 this.insertPat("");
             }else{
@@ -198,52 +194,91 @@
         },
     };
 
-    // @implementation of Key
-    Key = {
-        init : function(c){
-            this.id = "key-" + c;
-            this.dataset.key = c;
-            this.className = "key gg ds";
+    // @implementation of Candies
+
+    Candies = {
+        init : function(){
+            return this;
+        }
+    };
+
+
+    // @implementation of Keyboard
+
+    Keyboard = {
+        init : function(){
+            $this = $(this);
 
             if(iPad || Android){
-                $(this).on("touchstart.qwerty", Handler.key.ondown);
-                $(this).on("touchmove.qwerty" , Handler.key.onmove);
-                $(this).on("touchend.qwerty"  , Handler.key.onup);
+                $this.on("mousedown.qwerty", ".key", Handler.key.ondown);
+//                $this.on("mousemove.qwerty", ".key", Handler.key.ondown);
+//                $this.on("mouseup.qwerty"  , ".key", Handler.key.onup);
             }else{
-                $(this).on("mousedown.qwerty", Handler.key.ondown);
-                $(this).on("mousemove.qwerty", Handler.key.onmove);
-                $(this).on("mouseup.qwerty"  , Handler.key.onup);
-            }
+                $this.on("mousedown.qwerty", ".key", Handler.key.ondown);
+//                $this.on("mousemove.qwerty", ".key", Handler.key.onmove);
+//                $this.on("mouseup.qwerty"  , ".key", Handler.key.onup);
+            };
+            return this;
+        },
+        rows : []
+    };
+
+    Row = {
+        init : function(index){
+            this.id = "key-row-" + index;
+            this.className = "key-row clearfix";
+            return this;
+        },
+        keys : []
+    };
+
+
+    // @implementation of Key
+    Key = {
+        init : function(key){
+            var $this = $(this),
+                char  = {};
+
+            this.id = "key-" + key;
+            this.dataset.key = key;
+            this.className = "key gg ds";
 
            // when this is meta key
-            if(c.length > 1){
-                this.className += " key-" + c;
+            if(key.length > 1){
+                this.className += " key-" + key;
             };  
 
             // setup child node
-            this.char = div();
-            this.char.className = "key-char";
-            this.char.innerHTML = dictionary[c].center.toUpperCase();
-            this.appendChild(this.char);
+            char = $.extend(div(),KeyChar).init(key);
+            this.char = char;
+            this.appendChild(char);
 
             return this;
         },
         char : {},
     };
 
+    KeyChar = {
+        init : function(key){
+            this.className = "key-char";
+            this.innerHTML = dictionary[key].center.toUpperCase();
+            return this;
+        }
+    };
+
     // @implementation of Pie
     Pie = {
-        init : function(c) {
+        init : function(key) {
+            var _center;
 
             this.className = "pie gbl";
-            this.center = div();
-            this.center.className = "pie-char";
-            this.center.dataset.key = c;
-            this.center.innerHTML = dictionary[c].center;
-            this.appendChild(this.center);
+            
+            _center = $.extend(div(),PieCenter).init(key);
+            this.center = _center;
+            this.appendChild(_center);
 
             for(var i = 0, max = 5, p = {} ; i < max ; i++){
-                p = $.extend(div(),PiePiece).init(c,i);
+                p = $.extend(div(),PiePiece).init(key,i);
                 this.pieces.push(p);
                 this.appendChild(p);
             }
@@ -252,6 +287,16 @@
         center : {},
         pieces : []
     }
+
+    // @implementation of PieCenter
+    PieCenter = {
+        init : function(key){
+            this.className = "pie-char";
+            this.dataset.key = key;
+            this.innerHTML = dictionary[key].center;
+            return this;
+        }
+    };
 
     // @implementation of PiePiece
     PiePiece = {
@@ -393,7 +438,7 @@
                     switch(chara){
                         case "delete" :
                         //    textarea.delete(); 
-                            $("#textarea").trigger("delete.qwerty");
+                            $(textarea).trigger("delete.qwerty");
                             break;
                         case "shift" :
                             break;
@@ -411,23 +456,15 @@
                             return false;
                             break;
                     }
-                }
+                };
                 $(current.key).removeClass("ggr").addClass("gg");
                 if(current.pie){
                     current.key.removeChild(current.key.pie);
-                }
+                };
                 current.event = null;
                 current.key = null;
                 current.pie = null;
                 current.piece = null;
-            }
-        },
-        keyboard : {
-            ondown : function(e) {
-            },
-            onmove : function(e) {
-            },
-            onup   : function(e) {
             }
         },
         key : {
