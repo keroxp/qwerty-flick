@@ -2,13 +2,13 @@
     // @interface
     var QWERTY,
     // Classes
-    Textarea,
-    Keyboard,
-    Candies,
-    Key,
-    Pie,
-    PiePiece,
-    Handler,
+    Textarea = {},
+    Keyboard = {},
+    Candies  = {},
+    Key      = {},
+    Pie      = {},
+    PiePiece = {},
+    Handler  = {},
     // Data
     rows = [],
     dictionary = {},
@@ -20,23 +20,28 @@
     current = {},
     // Helper functions
     addListener = function(type,obj,fn){},
-    stopEvent   = function(event){},
-    log         = function(text){};
+    stopEvent   = function(event){};
     // Initializer 
     $(function(){
         // private vars
         var MAIN,
-        textarea = $.extend($("#textarea")[0], Textarea).init(), 
-        keyboard = $.extend($("#keyboard")[0], Keyboard).init(),
-        candies =  $.extend($("#candies")[0],  Candies).init(),
+        textarea = {},
+        keyboard = {},
+        candies  = {},
         maxes = [],
         i, j, row, char, key;
 
+        // Extend DOM objects to UI objects (actually, we instantiate UI Objects which inherit from HTMLDivElement object) 
+        textarea = $.extend($("#textarea")[0], Textarea).init(); 
+        keyboard = $.extend($("#keyboard")[0], Keyboard).init();
+        candies  = $.extend($("#candies")[0],  Candies).init();
+
+        // Attach window object with event handler
         addListener("down", window, Handler.window.ondown);
         addListener("move", window, Handler.window.onmove);
         addListener("up"  , window, Handler.window.onup);
 
-        // keyboardオブジェクトの生成
+        // Setup keys for keyboard
         for(i = 0 , maxes[0] = rows.length ; i < maxes[0] ; i++){
             row = div(); 
             row.id = "key-row-" + i;
@@ -59,43 +64,54 @@
 
     // パイメニュー
     dictionary = {
-        "q" : ["q", "くぁ", "くぃ", "く", "くぇ", "くぉ"],
-        "w" : ["w", "わ", "うぃ", "う", "うぇ", "を"],
-        "e" : ["e", "え", "え", "え", "え", "え"],
-        "r" : ["r", "ら", "り", "る", "れ", "ろ"],
-        "t" : ["t", "た", "ち", "つ", "て", "と"],
-        "y" : ["y", "や", "い", "ゆ", "え", "お"],
-        "u" : ["u", "う", "う", "う", "う", "う"],
-        "i" : ["i", "い", "い", "い", "い", "い"],
-        "o" : ["o","お", "お", "お", "お", "お"],
-        "p" : ["p", "ぱ", "ぴ", "ぷ", "ぺ", "ぽ"],
-        "a" : ["a", "あ", "あ", "あ", "あ", "あ"],
-        "s" : ["s", "さ", "し", "す", "せ", "そ"],
-        "d" : ["d", "だ", "ぢ", "づ", "で", "ど"],
-        "f" : ["f", "ふぁ", "ふぃ", "ふ", "ふぇ", "ふぉ"],
-        "g" : ["g", "が", "ぎ", "ぐ", "げ", "ご"],
-        "h" : ["h", "は", "ひ", "ふ", "へ", "ほ"],
-        "j" : ["j", "じゃ", "じ", "じゅ", "じぇ", "じょ"],
-        "k" : ["k", "か", "き", "く", "け", "こ"],
-        "l" : ["l", "ぁ", "ぃ", "ぅ", "ぇ", "ぉ"],
-        "z" : ["z", "ざ", "じ", "ず", "ぜ", "ぞ"],
-        "x" : ["x", "ぁ", "ぃ", "ぅ", "ぇ", "ぉ"],
-        "c" : ["c", "つぁ", "つぃ", "つ", "つぇ", "つぉ"],
-        "v" : ["v", "ヴぁ", "ヴぃ", "ヴ", "ヴぇ", "ヴぉ"],
-        "b" : ["b", "ば", "び", "ぶ", "べ", "ぼ"],
-        "n" : ["n", "な", "に", "ぬ", "ね", "の"],
-        "m" : ["m", "ま", "み", "む", "め", "も"],
-        "," : [",", "、", "。", "ー", "！", "？"],
-        "." : [".", "", "", "", "", ""],
-        "enter" : ["⏎","","","","",""],
-        "command" : ["⌘","","","","",""],
-        "shift" : ["⇧","","","","",""],
-        "space" : ["","全角","","","",""],
-        "delete" : ["⌫","","","","",""],
-        "num": ["num","","","","",""]
+        "1" : {center : "1", pieces : [] },
+        "2" : {center : "2", pieces : [] },
+        "3" : {center : "3", pieces : [] },
+        "4" : {center : "4", pieces : [] },
+        "5" : {center : "5", pieces : [] },
+        "6" : {center : "6", pieces : [] },
+        "7" : {center : "7", pieces : [] },
+        "8" : {center : "8", pieces : [] },
+        "9" : {center : "9", pieces : [] },
+        "0" : {center : "0", pieces : [] },
+        "q" : {center : "q", pieces : ["くぁ", "くぃ", "く", "くぇ", "くぉ"] },
+        "w" : {center : "w", pieces : ["わ", "うぃ", "う", "うぇ", "を"] },
+        "e" : {center : "e", pieces : ["え", "え", "え", "え", "え"] },
+        "r" : {center : "r", pieces : ["ら", "り", "る", "れ", "ろ"] },
+        "t" : {center : "t", pieces : ["た", "ち", "つ", "て", "と"] },
+        "y" : {center : "y", pieces : ["や", "い", "ゆ", "え", "よ"] },
+        "u" : {center : "u", pieces : ["う", "う", "う", "う", "う"] },
+        "i" : {center : "i", pieces : ["い", "い", "い", "い", "い"] },
+        "o" : {center : "o", pieces : ["お", "お", "お", "お", "お"] },
+        "p" : {center : "p", pieces : ["ぱ", "ぴ", "ぷ", "ぺ", "ぽ"] },
+        "a" : {center : "a", pieces : ["あ", "あ", "あ", "あ", "あ"] },
+        "s" : {center : "s", pieces : ["さ", "し", "す", "せ", "そ"] },
+        "d" : {center : "d", pieces : ["だ", "ぢ", "づ", "で", "ど"] },
+        "f" : {center : "f", pieces : ["ふぁ", "ふぃ", "ふ", "ふぇ", "ふぉ"] },
+        "g" : {center : "g", pieces : ["が", "ぎ", "ぐ", "げ", "ご"] },
+        "h" : {center : "h", pieces : ["は", "ひ", "ふ", "へ", "ほ"] },
+        "j" : {center : "j", pieces : ["じゃ", "じ", "じゅ", "じぇ", "じょ"] },
+        "k" : {center : "k", pieces : ["か", "き", "く", "け", "こ"] },
+        "l" : {center : "l", pieces : ["ぁ", "ぃ", "ぅ", "ぇ", "ぉ"] },
+        "z" : {center : "z", pieces : ["ざ", "じ", "ず", "ぜ", "ぞ"] },
+        "x" : {center : "x", pieces : ["ぁ", "ぃ", "ぅ", "ぇ", "ぉ"] },
+        "c" : {center : "c", pieces : ["つぁ", "つぃ", "つ", "つぇ", "つぉ"] },
+        "v" : {center : "v", pieces : ["ヴぁ", "ヴぃ", "ヴ", "ヴぇ", "ヴぉ"] },
+        "b" : {center : "b", pieces : ["ば", "び", "ぶ", "べ", "ぼ"] },
+        "n" : {center : "n", pieces : ["な", "に", "ぬ", "ね", "の"] },
+        "m" : {center : "m", pieces : ["ま", "み", "む", "め", "も"] },
+        "," : {center : ",", pieces : ["、", "。", "ー", "！", "？"] },
+        "." : {center : ".", pieces : ["", "", "", "", ""] },
+        "-" : {center : "-", pieces : ["", "", "", "", ""] },
+        "enter"   : {center : "⏎", pieces : ["","","","",""] },
+        "command" : {center : "⌘", pieces : ["","","","",""] },
+        "shift"   : {center : "⇧", pieces : ["","","","",""] },
+        "space"   : {center : "space",  pieces : ["全角","","","",""] },
+        "delete"  : {center : "⌫", pieces : ["","","","",""] },
+        "num"     : {center : "123",pieces : ["","","","",""] }
     };
 
-    // 定数
+    // Constants
 
     PI = 3.14159265;
     iPad = (navigator.userAgent.indexOf("iPad") < 0 ) ?  false : true;
@@ -123,7 +139,13 @@
         init : function(){
             this.id = "textarea";
             this.disabled = "disabled";
-            addListener("down", this, Handler.textarea.ondown);
+            if(iPad || Android){
+                $(this).on("touchstart.qwerty", Handler.textarea.ondown); 
+            }else{
+                $(this).on("mousedown.qwerty", Handler.textarea.ondown);
+            }
+            $(this).on("delete.qwerty" , this.delete);
+            $(this).on("textchanged.qwerty" , AutoCorrector.onchange);
             addListener("move", this, Handler.textarea.onmove);
             addListener("up"  , this, Handler.textarea.onup);
             return this;
@@ -169,13 +191,11 @@
         selectedStr : function(){
             var pos = this.selectedRange(),
                 text = this.value;
-            return text.substr(pos.s,poe.e-pos.s);
+            return text.substr(pos.s,pos.e - pos.s);
         },
         setCaret : function(newpos){
             this.setSelectionRange(newpos,newpos);
         },
-        autoCorrecti : function(e) {
-        }
     };
 
     // @implementation of Key
@@ -185,19 +205,25 @@
             this.dataset.key = c;
             this.className = "key gg ds";
 
-            addListener("down", this, Handler.key.ondown);
-            addListener("move", this, Handler.key.onmove);
-            addListener("up"  , this, Handler.key.onup);
+            if(iPad || Android){
+                $(this).on("touchstart.qwerty", Handler.key.ondown);
+                $(this).on("touchmove.qwerty" , Handler.key.onmove);
+                $(this).on("touchend.qwerty"  , Handler.key.onup);
+            }else{
+                $(this).on("mousedown.qwerty", Handler.key.ondown);
+                $(this).on("mousemove.qwerty", Handler.key.onmove);
+                $(this).on("mouseup.qwerty"  , Handler.key.onup);
+            }
 
-            // when this is meta key
+           // when this is meta key
             if(c.length > 1){
-                this.classname += " key-" + c;
+                this.className += " key-" + c;
             };  
 
             // setup child node
             this.char = div();
             this.char.className = "key-char";
-            this.char.innerHTML = c.toUpperCase();
+            this.char.innerHTML = dictionary[c].center.toUpperCase();
             this.appendChild(this.char);
 
             return this;
@@ -208,12 +234,12 @@
     // @implementation of Pie
     Pie = {
         init : function(c) {
-            this.className = "pie gbl";
 
+            this.className = "pie gbl";
             this.center = div();
             this.center.className = "pie-char";
             this.center.dataset.key = c;
-            this.center.innerHTML = c;
+            this.center.innerHTML = dictionary[c].center;
             this.appendChild(this.center);
 
             for(var i = 0, max = 5, p = {} ; i < max ; i++){
@@ -231,11 +257,83 @@
     PiePiece = {
         init : function(key,index) {
             this.className = "pie-piece";
-            this.dataset.key = dictionary[key][index+1];
-            this.innerHTML = dictionary[key][index+1];
+            this.dataset.key = dictionary[key].pieces[index];
+            this.innerHTML = dictionary[key].pieces[index];
             return this;
         }
     }
+
+    // @implementation of AutoCorecctor
+    
+    AutoCorrector = {
+        init : function(){
+            return this;
+        },
+        str : "",
+        buffer : [],
+        isKana : function(text,index){
+            if(text[index] == "") return false;
+            if(text.charCodeAt(index) >= 0x3041 && text.charCodeAt(index) <= 0x3093){
+                return true;
+            }
+            return false;
+        },
+        sandwhich : function(){
+            //確認用の配列
+            var len, 
+            count = 0;
+
+            for(var i = 0; i < this.str.length; i++){
+                this.buffer[i] = this.str[i];
+            }
+           //配列の最後のポインタ
+            len = this.buffer.length - 1;
+
+            if(this.isKana(this.str, len) && !this.isKana(this.str, len-1)){
+                if(this.str[len-1] == "n"){
+                    count = this.numberOfRepeats();
+                    if(this.isKana(this.str, len-count-1)){
+                        this.replaceBuffer("ん", count);
+                        if(count!=1){
+                            this.buffer.splice(len-1);
+                        }
+                        console.log(this.buffer);
+                        this.str = this.buffer.join("");
+                        textarea.value = this.str;
+                    }
+                }else{
+                    count = this.numberOfRepeats();
+                    if(this.isKana(this.str, len-count-1)){
+                        this.replaceBuffer("っ", count);
+                        this.str = this.buffer.join("");
+                        textarea.value = this.str;
+                    }
+                }
+            }
+
+        },
+        replaceBuffer : function(chara,length){
+            for(var i = 1 , len = this.buffer.length - 1; i < length + 1 ; i++){
+                this.buffer[len - i] = chara;
+            };
+        },
+        numberOfRepeats : function(){
+            var count;
+            for(var i = 0 , count = 0 , max = this.buffer.length - 1 ; i< max ; i++){
+                if(this.buffer[max-i] != this.buffer[max]){
+                    break;
+                }else{
+                    count++;
+                }
+            }
+            return count;
+        },
+        onchange : function(){
+            AutoCorrector.str = this.value;
+            AutoCorrector.buffer = [];
+            AutoCorrector.sandwhich();
+        }
+    };
 
     // @implementation of Handler
     Handler = {
@@ -247,8 +345,10 @@
                 e.preventDefault();
                 if(current.event){
                     var cpp, 
-                    dx = e.pageX - current.event.pageX,
-                    dy = -(e.pageY - current.event.pageY),
+                    pos = getPosition(e),
+                    prevPos = getPosition(current.event),
+                    dx = pos.x - prevPos.x, 
+                    dy = -(pos.y - prevPos.y),
                     angle = Math.atan2(dy,dx);
 
                     if(angle < 0 ){
@@ -286,13 +386,14 @@
                 //キャラクタをインサート
                 var piece = current.piece,
                 chara = piece.getAttribute("data-key");
-                log(chara);
                 if(chara.length <= 2){
                     textarea.insertChar(chara);
+                    $(textarea).trigger("textchanged.qwerty");
                 }else if(chara.length > 2){
                     switch(chara){
                         case "delete" :
-                            textarea.delete(); 
+                        //    textarea.delete(); 
+                            $("#textarea").trigger("delete.qwerty");
                             break;
                         case "shift" :
                             break;
@@ -333,33 +434,30 @@
             ondown : function(e) {
                 e.preventDefault();
                 var key = this.getAttribute("data-key"),
-                p = $.extend(div(),Pie).init(key),
-                i,max;
+                p = $.extend(div(),Pie).init(key);
 
-                 // 凹ませる
+                // 凹ませる
                 $(this).removeClass("gg").addClass("ggr");
                 this.appendChild(p);
                 this.pie = p;
-                for(i = 0 , max = p.pieces.length ; i < max ; i++){
-                    p.pieces[i].style.left = p.pieces[i].offsetLeft - (p.pieces[i].offsetWidth / 2 - p.offsetWidth) - p.offsetWidth / 2 - 4 + "px";
-                    p.pieces[i].style.top  = p.pieces[i].offsetTop - (p.pieces[i].offsetHeight / 2 - p.offsetHeight) - p.offsetHeight / 2 - 4  + "px";
+                // Centering pieces
+                for(var i = 0 , max = p.pieces.length ; i < max ; i++){
+                    p.pieces[i].style.left = p.pieces[i].offsetLeft - (p.pieces[i].offsetWidth  / 2 - p.offsetWidth ) - p.offsetWidth  / 2 - 4 + "px";
+                    p.pieces[i].style.top  = p.pieces[i].offsetTop  - (p.pieces[i].offsetHeight / 2 - p.offsetHeight) - p.offsetHeight / 2 - 4 + "px";
                     p.pieces[i].style.left = p.pieces[i].offsetLeft + 70 * Math.cos((72 * i - 90) * PI / 180) + "px";
                     p.pieces[i].style.top  = p.pieces[i].offsetTop  + 70 * Math.sin((72 * i - 90) * PI / 180) + "px";
-                }
-                // カレントオブジェクトを登録
+                };
+                // Register buffers 
                 current.pie  = p;
                 current.piece = p.center;
                 current.event = e;
                 current.key   = this;
-
-                console.log(current);
             },
             onmove : function(e) {
-                // タップが発生し、かつ動いた場合
-           },
+            },
             onup   : function(e) {
                 var key = this.getAttribute("data-key"),
-                    pos = (e.changedTouches) ? {x : e.changedTouches[0].pageX , y : e.changedTouches[0].pageY } : {x : e.pageX , y : e.pageY };
+                    pos = getPosition(e);
                     switch(key){
                         case "num" :
                             if($(this).hasClass("open")){
@@ -371,13 +469,12 @@
                             }
                             break;
                         case "delete" :
-                            textarea.delete();
+                            //textarea.delete();
                             break;
                         case "space" :
                             textarea.insertChar(" ");
                             break;
                         default :
-//                            textarea.insertChar(this.getAttribute("data-key"));
                     }
                     $(this).removeClass("ggr").addClass("gg");
             }
@@ -392,13 +489,21 @@
 
     // Utility functions
 
+    getPosition = function(e){
+        if(e.touches){
+            return { x : e.changedTouches[0].pageX , y : e.changedTouches[0].pageY };
+        }else{
+            return { x : e.pageX , y : e.pageY };
+        };
+    }
+
     stopEvent = function(e){
         if(e.stopPropagation){
             e.stopPropagation();
         }else if(e.cancelBubble){
             e.cancelBubble();
         }
-    }
+    };
 
     addListener = function(type,obj,fn){
         switch(type){
@@ -430,17 +535,12 @@
                 }
                 break;
             default :
-                log("missing event type");
+                console.log("missing event type");
                 return false;
         }
-    }
+    };
 
     div = function(){
         return document.createElement("div");
     };
-
-    log = function(m) {
-        var _m = m;
-        console.log(_m);
-    }
 }());
