@@ -12,8 +12,7 @@
     PieCenter= {},
     PiePiece = {},
     // Controller Classes
-    Handler  = {},
-    AutoCorecctor = {},
+    AutoCorrectController = {},
     // Data
     rows = [],
     dictionary = {},
@@ -27,13 +26,14 @@
     getPosition = function(e){},
     getDistance = function(cure,preve){},
     getDirection = function(cure,preve){},
-    addListener = function(type,obj,fn){},
     stopEvent   = function(event){};
 
     // Main Class 
     $(function(){
         // private vars
         var MAIN,
+        // Controller
+        corrector = {},
         // instances
         textarea = {},
         keyboard = {},
@@ -41,12 +41,10 @@
         row = {},
         key = {},
         // iVars 
-        current = {
-            event : null,
-            key : null,
-            pie : null,
-            piece : null 
-        };
+        current = {};
+
+        // Instantiate auto-correct-controller
+        corrector = $.extend({},AutoCorrectController);
 
         // Extend DOM objects to UI objects (actually, we instantiate UI Objects which inherit from HTMLDivElement object) 
         textarea = $.extend($("#textarea")[0], Textarea).init(); 
@@ -73,7 +71,7 @@
             row = $.extend(div(),Row).init(i);
             for(var j = 0 ; j < rows[i].length ; j++){
                 // Instantiate Key object
-                key = $.extend(div(),Key,Handler.key).init(rows[i][j]);
+                key = $.extend(div(),Key).init(rows[i][j]);
                 // Add reference with parent node and append it to DOM tree
                 row.keys.push(key);
                 row.appendChild(key);
@@ -91,6 +89,8 @@
 
             // 凹ませる
             $(this).removeClass("gg").addClass("ggr");
+            //while(pieWillAppear()){};
+            pieWillAppear();
             this.appendChild(p);
             // Centering pieces
             for(var i = 0 , max = p.pieces.length ; i < max ; i++){
@@ -121,82 +121,108 @@
                     $(current.piece).removeClass().addClass("pie-piece");
                     current.piece = current.pie.pieces[dir];
                     $(current.piece).addClass("gbv");
-                    console.log("dir is "+dir);
                 };
             };
         };
 
         function keyDidUp (e) {
             e.preventDefault();
-            var $this = current.piece ||  current.pie.center;
+            if(current.event){
+                var $this = current.piece ||  current.pie.center;
 
-            if($this.key.length <=  2){
-                // Insert charactor
-                textarea.insertChar($this.getAttribute("data-key"));
-            }else{
-                // Implement metakeys function
-                switch($this.key){
-                    case "delete" :
-                        textarea.delete(); 
-                        break;
-                    case "shift" :
-                        break;
-                    case "command" : 
-                        break;
-                    case "space" : 
-                        textarea.insertChar(" ");
-                        break;
-                    case "enter" : 
-                        textarea.insertChar("\n");
-                        break;
-                    case "num" :
-                        break;
-                    default :
-                        console.log("invalid meta key : "+$this.key);
-                        return false;
-                        break;
-                }
-            };
-            $(current.key).removeClass("ggr").addClass("gg");
-            current.key.removeChild(current.pie);
+                if($this.key.length <=  2){
+                    // Insert charactor
+                    textarea.insertChar($this.getAttribute("data-key"));
+                }else{
+                    // Implement metakeys function
+                    switch($this.key){
+                        case "delete" :
+                            textarea.delete(); 
+                            break;
+                        case "shift" :
+                            break;
+                        case "command" : 
+                            break;
+                        case "space" : 
+                            textarea.insertChar(" ");
+                            break;
+                        case "enter" : 
+                            textarea.insertChar("\n");
+                            break;
+                        case "num" :
+                            break;
+                        default :
+                            console.log("invalid meta key : "+$this.key);
+                            return false;
+                            break;
+                    }
+                };
+                $(current.key).removeClass("ggr").addClass("gg");
 
-            current.event = null;
-            current.key = null;
-            current.piece = null;
+                pieWillDisspear();
+
+                current.key.removeChild(current.pie);
+
+                current.event = null;
+                current.key = null;
+                current.piece = null;
+            }
         };
 
         function pieWillAppear (e) {
+            return true;
         };
 
         function pieWillDisspear (e) {
+            return true;
         };
 
         function textareaDidChange (e,data) {
-            console.log("inserted : " + data.inserted);
+            console.log("inserted : " + data.inserted); 
+            var corrected = corrector.sandwhich(data.inserted);
+            if(corrected){
+                console.log("corrected is " + corrected);
+                textarea.correct(corrected);
+            }
+            return true;
         };
 
         function textareaDidDelete (e,data) {
             console.log("deleted : " + data.deleted);
+            return true;
         };
+
+        function textDidCorrect (e,data){
+        };
+
     });
 
-    
+
     // @implementation of Textarea
     Textarea = {
         init : function(){
             var $this = $(this);
 
             this.id = "textarea";
-            this.disabled = "disabled";
-//           $this.on("delete" , this.delete);
-//           $this.on("textchanged" , AutoCorrector.onchange);
+//            this.disabled = "disabled";
             return this;
+        },
+        selectedRange : function(){
+            return {s : this.selectionStart, e: this.selectionEnd}
+        },
+        selectedStr : function(){
+            var pos = this.selectedRange(),
+            text = this.value;
+            return text.substr(pos.s,pos.e - pos.s);
+        },
+        setCaret : function(newpos){
+            this.setSelectionRange(newpos,newpos);
         },
         insertChar : function(char){
             var pos = this.selectedRange(),
             text = this.value,
             prev = text.substr(0,pos.s),
-            next = text.substr(pos.e,text.length - pos.end),
+            next = text.substr(pos.e,text.length - pos.e),
             newpos = (prev + char).length;
 
             this.value = prev + char + next; 
@@ -231,17 +257,18 @@
             }
             $(this).trigger("textDidDelete", [{deleted : text.substr(pos.s,pos.e)}]); 
         },
-        selectedRange : function(){
-            return {s : this.selectionStart, e: this.selectionEnd}
+        enter : function(){
+            $(this).trigger("textDidEnter");
         },
-        selectedStr : function(){
-            var pos = this.selectedRange(),
-            text = this.value;
-            return text.substr(pos.s,pos.e - pos.s);
-        },
-        setCaret : function(newpos){
-            this.setSelectionRange(newpos,newpos);
-        },
+        correct : function(text){
+            var pos = this.selectedRange();
+            console.log(pos.s + " : " + pos.e);
+            console.log(text);
+            if(pos.s === pos.e){
+                this.setSelectionRange(pos.s - text.length - 1, text.length);
+//                this.insertChar(text);
+            };
+        }
     };
 
     // @implementation of Candies
@@ -257,7 +284,7 @@
 
     Keyboard = {
         init : function(){
-           return this;
+            return this;
         },
         rows : [],
     };
@@ -360,58 +387,69 @@
 
     // @implementation of AutoCorecctor
 
-    AutoCorrector = {
+    AutoCorrectController = {
         init : function(){
             return this;
         },
         str : "",
         buffer : [],
-        isKana : function(text,index){
-            if(text[index] == "") return false;
-            if(text.charCodeAt(index) >= 0x3041 && text.charCodeAt(index) <= 0x3093){
-                return true;
-            }
-            return false;
-        },
-        sandwhich : function(){
-            //確認用の配列
-            var len, 
+        sandwhich : function(char){
+            var len,
+            repeat,
+            corrected = "",
             count = 0;
 
-            for(var i = 0; i < this.str.length; i++){
-                this.buffer[i] = this.str[i];
+            // Don't allow a text to be pushed
+            if(char.length > 1){
+                return false;
+            };
+
+            // If buffer is empty, allow anything to be pushed
+            if(this.buffer.length === 0){
+                this.buffer.push(char);
+                return false;
+            }else if(this.buffer.length === 1 && this.isKana(this.buffer[0]) && this.isKana(char)){
+            // But don't allow repeat of Kanas
+                this.buffer[0] = char;
+                return false;
             }
-            //配列の最後のポインタ
+
+            this.buffer.push(char);
             len = this.buffer.length - 1;
+            repeat = this.buffer[len-1];
+            console.log(this.buffer);
 
-            if(this.isKana(this.str, len) && !this.isKana(this.str, len-1)){
-                if(this.str[len-1] == "n"){
-                    count = this.numberOfRepeats();
-                    if(this.isKana(this.str, len-count-1)){
-                        this.replaceBuffer("ん", count);
-                        if(count!=1){
-                            this.buffer.splice(len-1);
-                        }
-                        console.log(this.buffer);
-                        this.str = this.buffer.join("");
-                        textarea.value = this.str;
-                    }
+            // If the last object of buffer is Kana string and its previous object is not Kana string
+            if(this.isKana(char) && !this.isKana(repeat)){
+                // countup number of repeats same charactors
+                count = this.numberOfRepeats();
+                if(this.buffer[len-1] == "n"){
+                    this.replaceBuffer("ん", { from : 1 , to : len - 1});
+//                    if(count!=1){
+//                        this.buffer.splice(len-1);
+//                    };
                 }else{
-                    count = this.numberOfRepeats();
-                    if(this.isKana(this.str, len-count-1)){
-                        this.replaceBuffer("っ", count);
-                        this.str = this.buffer.join("");
-                        textarea.value = this.str;
-                    }
-                }
-            }
-
+                    this.replaceBuffer("っ", { from : 1 , to : len - 1});
+                };
+                corrected = this.buffer.join("");
+                this.buffer = [];
+                return corrected;
+            };
+            return false;
         },
-        replaceBuffer : function(chara,length){
-            for(var i = 1 , len = this.buffer.length - 1; i < length + 1 ; i++){
-                this.buffer[len - i] = chara;
+        isKana : function(char){
+            if(char.charCodeAt(0) >= 0x3041 && char.charCodeAt(0) <= 0x3093){
+                return true;
+            };
+            return false;
+        },
+        // Replace charactors bwtween Start of buffer and End of buffer
+        replaceBuffer : function(chara,range){
+            for(var i = range.from ; i < range.to + 1 ; i++){
+                this.buffer[i] = chara;
             };
         },
+        // Count the number of repeats of same charactors
         numberOfRepeats : function(){
             var count;
             for(var i = 0 , count = 0 , max = this.buffer.length - 1 ; i< max ; i++){
@@ -419,156 +457,11 @@
                     break;
                 }else{
                     count++;
-                }
-            }
+                };
+            };
             return count;
-        },
-        onchange : function(){
-            AutoCorrector.str = this.value;
-            AutoCorrector.buffer = [];
-            AutoCorrector.sandwhich();
         }
     };
-
-    // @implementation of Handler
-    Handler = {
-        window : {
-            ondown : function(e){
-                e.preventDefault(); 
-            },
-            onmove : function(e){
-                e.preventDefault();
-                if(current.event){
-                    var cpp, 
-                    pos = getPosition(e),
-                    prevPos = getPosition(current.event),
-                    dx = pos.x - prevPos.x, 
-                    dy = -(pos.y - prevPos.y),
-                    angle = Math.atan2(dy,dx);
-
-                    if(angle < 0 ){
-                        angle += PI * 2;
-                    }
-
-                    if((0 <= angle && angle < PI*3/10) || (PI*19/10 <= angle && angle <= PI*2)){
-                        // 右上
-                        cpp = current.pie.pieces[1];
-                    }else if(PI*3/10  <= angle && angle < PI*7/10 ){
-                        // 上
-                        cpp = current.pie.pieces[0];
-                    }else if(PI*7/10  <= angle && angle < PI*11/10 ){
-                        // 左上
-                        cpp = current.pie.pieces[4];
-                    }else if(PI*11/10  <= angle && angle < PI*15/10 ){
-                        // 左下
-                        cpp = current.pie.pieces[3];
-                    }else if(PI*15/10  <= angle && angle < PI*19/10 ){
-                        // 右下
-                        cpp = current.pie.pieces[2];
-                    }
-
-                    if(cpp !== current.piece){
-                        if($(current.piece).hasClass("pie-piece")) {
-                            current.piece.className = "pie-piece";
-                        }
-                        cpp.className += " gbv";
-                        current.piece = cpp;
-                    }
-                }
-            },
-            onup : function(e){
-                e.preventDefault();
-                console.log(e.srcElement);
-                //キャラクタをインサート
-                var piece = current.piece,
-                chara = piece.getAttribute("data-key");
-                if(chara.length <= 2){
-                    textarea.insertChar(chara);
-                    $(textarea).trigger("textchanged");
-                }else if(chara.length > 2){
-                    switch(chara){
-                        case "delete" :
-                            //    textarea.delete(); 
-                            $(textarea).trigger("delete");
-                            break;
-                        case "shift" :
-                            break;
-                        case "command" : 
-                            break;
-                        case "space" : 
-                            textarea.insertChar(" ");
-                            break;
-                        case "enter" : 
-                            textarea.insertChar("\n");
-                            break;
-                        case "num" :
-                            break;
-                        default :
-                            return false;
-                            break;
-                    }
-                };
-                $(current.key).removeClass("ggr").addClass("gg");
-                if(current.pie){
-                    current.key.removeChild(current.key.pie);
-                };
-                current.event = null;
-                current.key = null;
-                current.pie = null;
-                current.piece = null;
-            }
-        },
-        key : {
-            ondown : function(e) {
-                e.preventDefault();
-                var key = this.getAttribute("data-key"),
-                p = $.extend(div(),Pie).init(key);
-
-                // 凹ませる
-                $(this).removeClass("gg").addClass("ggr");
-                this.appendChild(p);
-                this.pie = p;
-                // Centering pieces
-                for(var i = 0 , max = p.pieces.length ; i < max ; i++){
-                    p.pieces[i].style.left = p.pieces[i].offsetLeft - (p.pieces[i].offsetWidth  / 2 - p.offsetWidth ) - p.offsetWidth  / 2 - 4 + "px";
-                    p.pieces[i].style.top  = p.pieces[i].offsetTop  - (p.pieces[i].offsetHeight / 2 - p.offsetHeight) - p.offsetHeight / 2 - 4 + "px";
-                    p.pieces[i].style.left = p.pieces[i].offsetLeft + 70 * Math.cos((72 * i - 90) * PI / 180) + "px";
-                    p.pieces[i].style.top  = p.pieces[i].offsetTop  + 70 * Math.sin((72 * i - 90) * PI / 180) + "px";
-                };
-                // Register buffers 
-                current.pie  = p;
-                current.piece = p.center;
-                current.event = e;
-                current.key   = this;
-            },
-            onmove : function(e) {
-            },
-            onup   : function(e) {
-                var key = this.getAttribute("data-key"),
-                pos = getPosition(e);
-                switch(key){
-                    case "num" :
-                        if($(this).hasClass("open")){
-                            $(this).removeClass("open");
-                            $("#key-row-0").css("display","none");
-                        }else{
-                            $(this).addClass("open");
-                            $("#key-row-0").css("display","block");
-                        }
-                        break;
-                    case "delete" :
-                        //textarea.delete();
-                        break;
-                    case "space" :
-                        textarea.insertChar(" ");
-                        break;
-                    default :
-                }
-                $(this).removeClass("ggr").addClass("gg");
-            }
-        }
-    };
-
 
     // Utility functions
 
@@ -624,37 +517,6 @@
         }else if(e.cancelBubble){
             e.cancelBubble();
         }
-    };
-
-    $.fn.addListener = function(type, delegate, fn){
-        if(iPad || Android) {
-            switch(type){
-                case "down" :
-                    if(iPad || Android) {
-                        this.on("touchstart", delegate, fn);
-                    }else{
-                        this.on("mousedown", delegate , fn);
-                    };
-                    break;
-                case "move" :
-                    if(iPad || Android){
-                        this.on("touchmove", delegate, fn);
-                    }else{
-                        this.on("mousemove", delegate, fn);
-                    }
-                    break;
-                case "up" :
-                    if(iPad || Android){
-                        this.on("touchend", delegate, fn);
-                    }else{
-                        this.on("mouseup", delegate, fn);
-                    }
-                    break;
-                default :
-                    console.log("missing event type");
-                    return false;
-            };
-        };
     };
 
     div = function(){
