@@ -24,9 +24,13 @@
     // Helper objectas ( an interface of event handlers)
     current = {},
     // Helper functions
+    getPosition = function(e){},
+    getDistance = function(cure,preve){},
+    getDirection = function(cure,preve){},
     addListener = function(type,obj,fn){},
     stopEvent   = function(event){};
-    // Initializer 
+
+    // Main Class 
     $(function(){
         // private vars
         var MAIN,
@@ -35,7 +39,14 @@
         keyboard = {},
         candies  = {},
         row = {},
-        key = {};
+        key = {},
+        // iVars 
+        current = {
+            event : null,
+            key : null,
+            pie : null,
+            piece : null 
+        };
 
         // Extend DOM objects to UI objects (actually, we instantiate UI Objects which inherit from HTMLDivElement object) 
         textarea = $.extend($("#textarea")[0], Textarea).init(); 
@@ -43,9 +54,9 @@
         candies  = $.extend($("#candies")[0],  Candies).init();
 
         // Attach window object with event handler
-        addListener("down", window, Handler.window.ondown);
-        addListener("move", window, Handler.window.onmove);
-        addListener("up"  , window, Handler.window.onup);
+        $(keyboard).on("mousedown", ".key", keyDidDown);
+        $(window).on("mousemove", keyDidMove);
+        $(window).on("mouseup"  , keyDidUp);
 
         // Setup keys for keyboard
         for(var i = 0 ; i < rows.length ; i++){
@@ -61,70 +72,104 @@
             // Add reference with parent node and append it to DOM tre
             keyboard.rows.push(row);
             keyboard.appendChild(row);
-        }
+        };
+
+        // Event delegate functions (these will be called when some event happend)
+
+        function keyDidDown (e) {
+            e.preventDefault();
+            var p = $.extend(div(),Pie).init(this.key);
+
+            // 凹ませる
+            $(this).removeClass("gg").addClass("ggr");
+            this.appendChild(p);
+            this.pie = p;
+            // Centering pieces
+            for(var i = 0 , max = p.pieces.length ; i < max ; i++){
+                p.pieces[i].style.left = p.pieces[i].offsetLeft - (p.pieces[i].offsetWidth  / 2 - p.offsetWidth ) - p.offsetWidth  / 2 - 4 + "px";
+                p.pieces[i].style.top  = p.pieces[i].offsetTop  - (p.pieces[i].offsetHeight / 2 - p.offsetHeight) - p.offsetHeight / 2 - 4 + "px";
+                p.pieces[i].style.left = p.pieces[i].offsetLeft + 70 * Math.cos((72 * i - 90) * PI / 180) + "px";
+                p.pieces[i].style.top  = p.pieces[i].offsetTop  + 70 * Math.sin((72 * i - 90) * PI / 180) + "px";
+            };
+            // Register buffers 
+            current.event = e;
+            current.key   = this;
+            console.log(this);
+        };
+
+        function keyDidMove (e) {
+            e.preventDefault();
+            // When we're handling some mouse click event
+            if(current.event){
+                var dir = getDirection(e,current.event),
+                dis = getDistance(e,current.event);
+                // If mouse is out of PieCenter (in other words, mouse is on PiePieces or out of Pie)
+                if(dis > 5 && !current.piece){
+                    current.piece = current.key.pie.pieces[dir];
+                    $(current.piece).addClass("gbv");
+                };
+
+                if(current.piece && current.piece.direction !== dir){
+                    $(current.piece).removeClass().addClass("pie-piece");
+                    current.piece = current.key.pie.pieces[dir];
+                    $(current.piece).addClass("gbv");
+                    console.log("dir is "+dir);
+                };
+            };
+        };
+
+        function keyDidUp (e) {
+            e.preventDefault();
+            var $this = current.piece ||  current.key.pie.center;
+
+            console.log($this.key);
+
+            if($this.key.length <=  2){
+                // Insert charactor
+                textarea.insertChar($this.getAttribute("data-key"));
+            }else{
+                // Implement metakeys function
+                switch($this.key){
+                    case "delete" :
+                        textarea.delete(); 
+                        break;
+                    case "shift" :
+                        break;
+                    case "command" : 
+                        break;
+                    case "space" : 
+                        textarea.insertChar(" ");
+                        break;
+                    case "enter" : 
+                        textarea.insertChar("\n");
+                        break;
+                    case "num" :
+                        break;
+                    default :
+                        console.log("invalid meta key : "+$this.key);
+                        return false;
+                        break;
+                }
+            };
+            $(current.key).removeClass("ggr").addClass("gg");
+            current.key.removeChild(current.key.pie);
+
+//            current.event = null;
+//            current.key = null;
+//            current.piece = null;
+        };
+
+        function pieWillAppear (e) {
+        };
+
+        function pieWillDisspear (e) {
+        };
+
+        function textareaDidChange (e) {
+        };
     });
 
-    // Data for each rows of keyboard
-    rows[0] = ["1","2","3","4","5","6","7","8","9","0"];
-    rows[1] = ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "delete"]
-    rows[2] = ["a", "s", "d", "f", "g", "h", "j", "k", "l","enter"]
-    rows[3] = ["shift","z", "x", "c", "v", "b", "n", "m", ",", ".","-"];
-    rows[4] = ["command","space","num"];
-
-    // Data for Pie Menu 
-    dictionary = {
-        "1" : {center : "1", pieces : [] },
-        "2" : {center : "2", pieces : [] },
-        "3" : {center : "3", pieces : [] },
-        "4" : {center : "4", pieces : [] },
-        "5" : {center : "5", pieces : [] },
-        "6" : {center : "6", pieces : [] },
-        "7" : {center : "7", pieces : [] },
-        "8" : {center : "8", pieces : [] },
-        "9" : {center : "9", pieces : [] },
-        "0" : {center : "0", pieces : [] },
-        "q" : {center : "q", pieces : ["くぁ", "くぃ", "く", "くぇ", "くぉ"] },
-        "w" : {center : "w", pieces : ["わ", "うぃ", "う", "うぇ", "を"] },
-        "e" : {center : "e", pieces : ["え", "え", "え", "え", "え"] },
-        "r" : {center : "r", pieces : ["ら", "り", "る", "れ", "ろ"] },
-        "t" : {center : "t", pieces : ["た", "ち", "つ", "て", "と"] },
-        "y" : {center : "y", pieces : ["や", "い", "ゆ", "え", "よ"] },
-        "u" : {center : "u", pieces : ["う", "う", "う", "う", "う"] },
-        "i" : {center : "i", pieces : ["い", "い", "い", "い", "い"] },
-        "o" : {center : "o", pieces : ["お", "お", "お", "お", "お"] },
-        "p" : {center : "p", pieces : ["ぱ", "ぴ", "ぷ", "ぺ", "ぽ"] },
-        "a" : {center : "a", pieces : ["あ", "あ", "あ", "あ", "あ"] },
-        "s" : {center : "s", pieces : ["さ", "し", "す", "せ", "そ"] },
-        "d" : {center : "d", pieces : ["だ", "ぢ", "づ", "で", "ど"] },
-        "f" : {center : "f", pieces : ["ふぁ", "ふぃ", "ふ", "ふぇ", "ふぉ"] },
-        "g" : {center : "g", pieces : ["が", "ぎ", "ぐ", "げ", "ご"] },
-        "h" : {center : "h", pieces : ["は", "ひ", "ふ", "へ", "ほ"] },
-        "j" : {center : "j", pieces : ["じゃ", "じ", "じゅ", "じぇ", "じょ"] },
-        "k" : {center : "k", pieces : ["か", "き", "く", "け", "こ"] },
-        "l" : {center : "l", pieces : ["ぁ", "ぃ", "ぅ", "ぇ", "ぉ"] },
-        "z" : {center : "z", pieces : ["ざ", "じ", "ず", "ぜ", "ぞ"] },
-        "x" : {center : "x", pieces : ["ぁ", "ぃ", "ぅ", "ぇ", "ぉ"] },
-        "c" : {center : "c", pieces : ["つぁ", "つぃ", "つ", "つぇ", "つぉ"] },
-        "v" : {center : "v", pieces : ["ヴぁ", "ヴぃ", "ヴ", "ヴぇ", "ヴぉ"] },
-        "b" : {center : "b", pieces : ["ば", "び", "ぶ", "べ", "ぼ"] },
-        "n" : {center : "n", pieces : ["な", "に", "ぬ", "ね", "の"] },
-        "m" : {center : "m", pieces : ["ま", "み", "む", "め", "も"] },
-        "," : {center : ",", pieces : ["、", "。", "ー", "！", "？"] },
-        "." : {center : ".", pieces : ["", "", "", "", ""] },
-        "-" : {center : "-", pieces : ["", "", "", "", ""] },
-        "enter"   : {center : "⏎", pieces : ["","","","",""] },
-        "command" : {center : "⌘", pieces : ["","","","",""] },
-        "shift"   : {center : "⇧", pieces : ["","","","",""] },
-        "space"   : {center : "space",  pieces : ["全角","","","",""] },
-        "delete"  : {center : "⌫", pieces : ["","","","",""] },
-        "num"     : {center : "123",pieces : ["","","","",""] }
-    };
-
-    // Constants
-    PI = 3.14159265;
-    iPad = (navigator.userAgent.indexOf("iPad") < 0 ) ?  false : true;
-    Android = (navigator.userAgent.indexOf("Android") < 0 ) ? false : true;
-
+    
     // @implementation of Textarea
     Textarea = {
         init : function(){
@@ -132,17 +177,8 @@
 
             this.id = "textarea";
             this.disabled = "disabled";
-            if(iPad || Android){
-                $this.on("touchstart.qwerty", Handler.textarea.ondown); 
-                $this.on("touchmove.qwerty" , Handler.textarea.onmove);
-                $this.on("touchend.qwerty"  , Handler.text.onup);
-            }else{
-                $this.on("mousedown.qwerty", Handler.textarea.ondown);
-                $this.on("mousemove.qwerty", Handler.textarea.onmove);
-                $this.on("mouseup.qwerty"  , Handler.textarea.onup);
-            }
-            $this.on("delete.qwerty" , this.delete);
-            $this.on("textchanged.qwerty" , AutoCorrector.onchange);
+//           $this.on("delete" , this.delete);
+//           $this.on("textchanged" , AutoCorrector.onchange);
             return this;
         },
         insertChar : function(char){
@@ -154,6 +190,7 @@
 
             this.value = prev + char + next; 
             this.setCaret(newpos);
+            $(this).trigger("textDidChange",{inserted : char});
         },
         insertPat : function(pat){
             var pos = this.selectedRange(),
@@ -164,6 +201,7 @@
 
             this.value = prev + pat + next;
             this.setSelectionRange(pos.s,(prev+pat).length);
+            $(this).trigger("textDidChange",{inserted : pat});
         },
         delete : function(){
             var selected = this.selectedStr(),
@@ -180,13 +218,14 @@
                     this.setCaret(prev.length);
                 }
             }
+            $(this).trigger("textDidDelete", {deleted : selected}); 
         },
         selectedRange : function(){
             return {s : this.selectionStart, e: this.selectionEnd}
         },
         selectedStr : function(){
             var pos = this.selectedRange(),
-                text = this.value;
+            text = this.value;
             return text.substr(pos.s,pos.e - pos.s);
         },
         setCaret : function(newpos){
@@ -207,20 +246,9 @@
 
     Keyboard = {
         init : function(){
-            $this = $(this);
-
-            if(iPad || Android){
-                $this.on("mousedown.qwerty", ".key", Handler.key.ondown);
-//                $this.on("mousemove.qwerty", ".key", Handler.key.ondown);
-//                $this.on("mouseup.qwerty"  , ".key", Handler.key.onup);
-            }else{
-                $this.on("mousedown.qwerty", ".key", Handler.key.ondown);
-//                $this.on("mousemove.qwerty", ".key", Handler.key.onmove);
-//                $this.on("mouseup.qwerty"  , ".key", Handler.key.onup);
-            };
-            return this;
+           return this;
         },
-        rows : []
+        rows : [],
     };
 
     Row = {
@@ -237,15 +265,17 @@
     Key = {
         init : function(key){
             var $this = $(this),
-                char  = {};
+            char  = {};
 
             this.id = "key-" + key;
             this.dataset.key = key;
             this.className = "key gg ds";
+            this.key = key;
 
-           // when this is meta key
+            // when this is meta key
             if(key.length > 1){
                 this.className += " key-" + key;
+                this.isMetaKey = true;
             };  
 
             // setup child node
@@ -256,6 +286,8 @@
             return this;
         },
         char : {},
+        key : "",
+        isMetaKey : false
     };
 
     KeyChar = {
@@ -272,7 +304,6 @@
             var _center;
 
             this.className = "pie gbl";
-            
             _center = $.extend(div(),PieCenter).init(key);
             this.center = _center;
             this.appendChild(_center);
@@ -294,8 +325,10 @@
             this.className = "pie-char";
             this.dataset.key = key;
             this.innerHTML = dictionary[key].center;
+            this.key = key;
             return this;
-        }
+        },
+        key : ""
     };
 
     // @implementation of PiePiece
@@ -304,12 +337,16 @@
             this.className = "pie-piece";
             this.dataset.key = dictionary[key].pieces[index];
             this.innerHTML = dictionary[key].pieces[index];
+            this.key = key;
+            this.direction = index;
             return this;
-        }
+        },
+        key : "",
+        direction : -1 
     }
 
     // @implementation of AutoCorecctor
-    
+
     AutoCorrector = {
         init : function(){
             return this;
@@ -331,7 +368,7 @@
             for(var i = 0; i < this.str.length; i++){
                 this.buffer[i] = this.str[i];
             }
-           //配列の最後のポインタ
+            //配列の最後のポインタ
             len = this.buffer.length - 1;
 
             if(this.isKana(this.str, len) && !this.isKana(this.str, len-1)){
@@ -428,17 +465,18 @@
             },
             onup : function(e){
                 e.preventDefault();
+                console.log(e.srcElement);
                 //キャラクタをインサート
                 var piece = current.piece,
                 chara = piece.getAttribute("data-key");
                 if(chara.length <= 2){
                     textarea.insertChar(chara);
-                    $(textarea).trigger("textchanged.qwerty");
+                    $(textarea).trigger("textchanged");
                 }else if(chara.length > 2){
                     switch(chara){
                         case "delete" :
-                        //    textarea.delete(); 
-                            $(textarea).trigger("delete.qwerty");
+                            //    textarea.delete(); 
+                            $(textarea).trigger("delete");
                             break;
                         case "shift" :
                             break;
@@ -494,32 +532,27 @@
             },
             onup   : function(e) {
                 var key = this.getAttribute("data-key"),
-                    pos = getPosition(e);
-                    switch(key){
-                        case "num" :
-                            if($(this).hasClass("open")){
-                                $(this).removeClass("open");
-                                $("#key-row-0").css("display","none");
-                            }else{
-                                $(this).addClass("open");
-                                $("#key-row-0").css("display","block");
-                            }
-                            break;
-                        case "delete" :
-                            //textarea.delete();
-                            break;
-                        case "space" :
-                            textarea.insertChar(" ");
-                            break;
-                        default :
-                    }
-                    $(this).removeClass("ggr").addClass("gg");
+                pos = getPosition(e);
+                switch(key){
+                    case "num" :
+                        if($(this).hasClass("open")){
+                            $(this).removeClass("open");
+                            $("#key-row-0").css("display","none");
+                        }else{
+                            $(this).addClass("open");
+                            $("#key-row-0").css("display","block");
+                        }
+                        break;
+                    case "delete" :
+                        //textarea.delete();
+                        break;
+                    case "space" :
+                        textarea.insertChar(" ");
+                        break;
+                    default :
+                }
+                $(this).removeClass("ggr").addClass("gg");
             }
-        },
-        textarea : {
-            ondown : function(e){},
-            onmove : function(e){},
-            onup   : function(e){}
         }
     };
 
@@ -532,7 +565,45 @@
         }else{
             return { x : e.pageX , y : e.pageY };
         };
-    }
+    };
+
+    getDistance = function(curE, prevE){
+        var curPos = getPosition(curE),
+        prevPos = getPosition(prevE);
+
+        return Math.floor(Math.sqrt(Math.pow((curPos.x - prevPos.x),2) + Math.pow((curPos.y - prevPos.y),2)));
+    };
+
+    getDirection = function(curE, prevE){
+        var curpos = getPosition(curE),
+        prevPos = getPosition(prevE),
+        dx = curpos.x - prevPos.x, 
+        dy = -(curpos.y - prevPos.y),
+        angle = Math.atan2(dy,dx);
+
+        if(angle < 0 ){
+            angle += PI * 2;
+        }
+
+        if((0 <= angle && angle < PI*3/10) || (PI*19/10 <= angle && angle <= PI*2)){
+            // 右上
+            return 1;
+        }else if(PI*3/10  <= angle && angle < PI*7/10 ){
+            // 上
+            return 0;
+        }else if(PI*7/10  <= angle && angle < PI*11/10 ){
+            // 左上
+            return 4
+        }else if(PI*11/10  <= angle && angle < PI*15/10 ){
+            // 左下
+            return 3;
+        }else if(PI*15/10  <= angle && angle < PI*19/10 ){
+            // 右下
+            return 2;
+        }else{
+            console.log("invalid angle");
+        }
+    };
 
     stopEvent = function(e){
         if(e.stopPropagation){
@@ -542,42 +613,100 @@
         }
     };
 
-    addListener = function(type,obj,fn){
-        switch(type){
-            case "down" :
-                if(iPad || Android) {
-                    obj.addEventListener("touchstart",fn,false);
-                }else if(obj.addEventListener){
-                    obj.addEventListener("mousedown",fn,false);
-                }else if(obj.attachEvent){
-                    obj.attachEvent("onmousedown",fn,false);
-                }
-                break;
-            case "move" :
-                if(iPad || Android){
-                    obj.addEventListener("touchmove",fn,false);
-                }else if(obj.addEventListener){
-                    obj.addEventListener("mousemove",fn,false);
-                }else if(obj.attachEvent){
-                    obj.attachEvent("onmousemove",fn,false);
-                }
-                break;
-            case "up" :
-                if(iPad || Android){
-                    obj.addEventListener("touchend",fn,false);
-                }else if(obj.addEventListener){
-                    obj.addEventListener("mouseup",fn,false);
-                }else if(obj.attachEvent){
-                    obj.attachEvent("onmouseup",fn,false);
-                }
-                break;
-            default :
-                console.log("missing event type");
-                return false;
-        }
+    $.fn.addListener = function(type, delegate, fn){
+        if(iPad || Android) {
+            switch(type){
+                case "down" :
+                    if(iPad || Android) {
+                        this.on("touchstart", delegate, fn);
+                    }else{
+                        this.on("mousedown", delegate , fn);
+                    };
+                    break;
+                case "move" :
+                    if(iPad || Android){
+                        this.on("touchmove", delegate, fn);
+                    }else{
+                        this.on("mousemove", delegate, fn);
+                    }
+                    break;
+                case "up" :
+                    if(iPad || Android){
+                        this.on("touchend", delegate, fn);
+                    }else{
+                        this.on("mouseup", delegate, fn);
+                    }
+                    break;
+                default :
+                    console.log("missing event type");
+                    return false;
+            };
+        };
     };
 
     div = function(){
         return document.createElement("div");
+    }
+
+    // Data for each rows of keyboard
+    rows[0] = ["1","2","3","4","5","6","7","8","9","0"];
+    rows[1] = ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "delete"]
+    rows[2] = ["a", "s", "d", "f", "g", "h", "j", "k", "l","enter"]
+    rows[3] = ["shift","z", "x", "c", "v", "b", "n", "m", ",", ".","-"];
+    rows[4] = ["command","space","num"];
+
+    // Data for Pie Menu 
+    dictionary = {
+        "1" : {center : "1", pieces : [] },
+        "2" : {center : "2", pieces : [] },
+        "3" : {center : "3", pieces : [] },
+        "4" : {center : "4", pieces : [] },
+        "5" : {center : "5", pieces : [] },
+        "6" : {center : "6", pieces : [] },
+        "7" : {center : "7", pieces : [] },
+        "8" : {center : "8", pieces : [] },
+        "9" : {center : "9", pieces : [] },
+        "0" : {center : "0", pieces : [] },
+        "q" : {center : "q", pieces : ["くぁ", "くぃ", "く", "くぇ", "くぉ"] },
+        "w" : {center : "w", pieces : ["わ", "うぃ", "う", "うぇ", "を"] },
+        "e" : {center : "e", pieces : ["え", "え", "え", "え", "え"] },
+        "r" : {center : "r", pieces : ["ら", "り", "る", "れ", "ろ"] },
+        "t" : {center : "t", pieces : ["た", "ち", "つ", "て", "と"] },
+        "y" : {center : "y", pieces : ["や", "い", "ゆ", "え", "よ"] },
+        "u" : {center : "u", pieces : ["う", "う", "う", "う", "う"] },
+        "i" : {center : "i", pieces : ["い", "い", "い", "い", "い"] },
+        "o" : {center : "o", pieces : ["お", "お", "お", "お", "お"] },
+        "p" : {center : "p", pieces : ["ぱ", "ぴ", "ぷ", "ぺ", "ぽ"] },
+        "a" : {center : "a", pieces : ["あ", "あ", "あ", "あ", "あ"] },
+        "s" : {center : "s", pieces : ["さ", "し", "す", "せ", "そ"] },
+        "d" : {center : "d", pieces : ["だ", "ぢ", "づ", "で", "ど"] },
+        "f" : {center : "f", pieces : ["ふぁ", "ふぃ", "ふ", "ふぇ", "ふぉ"] },
+        "g" : {center : "g", pieces : ["が", "ぎ", "ぐ", "げ", "ご"] },
+        "h" : {center : "h", pieces : ["は", "ひ", "ふ", "へ", "ほ"] },
+        "j" : {center : "j", pieces : ["じゃ", "じ", "じゅ", "じぇ", "じょ"] },
+        "k" : {center : "k", pieces : ["か", "き", "く", "け", "こ"] },
+        "l" : {center : "l", pieces : ["ぁ", "ぃ", "ぅ", "ぇ", "ぉ"] },
+        "z" : {center : "z", pieces : ["ざ", "じ", "ず", "ぜ", "ぞ"] },
+        "x" : {center : "x", pieces : ["ぁ", "ぃ", "ぅ", "ぇ", "ぉ"] },
+        "c" : {center : "c", pieces : ["つぁ", "つぃ", "つ", "つぇ", "つぉ"] },
+        "v" : {center : "v", pieces : ["ヴぁ", "ヴぃ", "ヴ", "ヴぇ", "ヴぉ"] },
+        "b" : {center : "b", pieces : ["ば", "び", "ぶ", "べ", "ぼ"] },
+        "n" : {center : "n", pieces : ["な", "に", "ぬ", "ね", "の"] },
+        "m" : {center : "m", pieces : ["ま", "み", "む", "め", "も"] },
+        "," : {center : ",", pieces : ["、", "。", "ー", "！", "？"] },
+        "." : {center : ".", pieces : ["", "", "", "", ""] },
+        "-" : {center : "-", pieces : ["", "", "", "", ""] },
+        "enter"   : {center : "⏎", pieces : ["","","","",""] },
+        "command" : {center : "⌘", pieces : ["","","","",""] },
+        "shift"   : {center : "⇧", pieces : ["","","","",""] },
+        "space"   : {center : "space",  pieces : ["全角","","","",""] },
+        "delete"  : {center : "⌫", pieces : ["","","","",""] },
+        "num"     : {center : "123",pieces : ["","","","",""] }
     };
+
+    // Constants
+    PI = 3.14159265;
+    iPad = (navigator.userAgent.indexOf("iPad") < 0 ) ?  false : true;
+    Android = (navigator.userAgent.indexOf("Android") < 0 ) ? false : true;
+    ;
 }());

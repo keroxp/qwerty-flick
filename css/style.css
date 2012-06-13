@@ -41,7 +41,7 @@ html,body {
 /* Input */
 
 #input-wrapper {
-    position:fixed;
+    position:absolute;
     width : 100%;
     bottom:0;
 }
@@ -133,7 +133,7 @@ html,body {
 
 .key {
     width: 8%;
-    border: 1px solid #555;
+    /*    border: 1px solid #555; */
     box-sizing: border-box;
     position:relative;
     float:left;
@@ -155,19 +155,19 @@ html,body {
 
 
 .key .key-char {
-    padding:20px 0;
+    border:1px solid #555;
+    border-radius:10px;
+    padding:19px 0;
     color: #333;
 }
 
-/*
- *  * Flick
- *   */
+/*  Flick */
 
-    .flick {
-        position:absolute;
-        z-index:9999;
-        text-align:center;
-        color:white;
+.flick {
+    position:absolute;
+    z-index:9999;
+    text-align:center;
+    color:white;
 }
 .flick .flick-char {
     padding:20px 0;
