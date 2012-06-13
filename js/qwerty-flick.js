@@ -50,13 +50,22 @@
 
         // Extend DOM objects to UI objects (actually, we instantiate UI Objects which inherit from HTMLDivElement object) 
         textarea = $.extend($("#textarea")[0], Textarea).init(); 
+        $(textarea).on("textDidChange", textareaDidChange);
+        $(textarea).on("textDidDelete", textareaDidDelete);
+
         keyboard = $.extend($("#keyboard")[0], Keyboard).init();
         candies  = $.extend($("#candies")[0],  Candies).init();
 
         // Attach window object with event handler
-        $(keyboard).on("mousedown", ".key", keyDidDown);
-        $(window).on("mousemove", keyDidMove);
-        $(window).on("mouseup"  , keyDidUp);
+        if(iPad || Android){
+            $(keyboard).on("touchstart", ".key", keyDown);
+            $(window).on("touchmove", keyDidDown);
+            $(window).on("touchend", keyDidUp);
+        }else{
+            $(keyboard).on("mousedown", ".key", keyDidDown);
+            $(window).on("mousemove", keyDidMove);
+            $(window).on("mouseup"  , keyDidUp);
+        }
 
         // Setup keys for keyboard
         for(var i = 0 ; i < rows.length ; i++){
@@ -83,7 +92,6 @@
             // 凹ませる
             $(this).removeClass("gg").addClass("ggr");
             this.appendChild(p);
-            this.pie = p;
             // Centering pieces
             for(var i = 0 , max = p.pieces.length ; i < max ; i++){
                 p.pieces[i].style.left = p.pieces[i].offsetLeft - (p.pieces[i].offsetWidth  / 2 - p.offsetWidth ) - p.offsetWidth  / 2 - 4 + "px";
@@ -94,7 +102,7 @@
             // Register buffers 
             current.event = e;
             current.key   = this;
-            console.log(this);
+            current.pie   = p;
         };
 
         function keyDidMove (e) {
@@ -105,13 +113,13 @@
                 dis = getDistance(e,current.event);
                 // If mouse is out of PieCenter (in other words, mouse is on PiePieces or out of Pie)
                 if(dis > 5 && !current.piece){
-                    current.piece = current.key.pie.pieces[dir];
+                    current.piece = current.pie.pieces[dir];
                     $(current.piece).addClass("gbv");
                 };
 
                 if(current.piece && current.piece.direction !== dir){
                     $(current.piece).removeClass().addClass("pie-piece");
-                    current.piece = current.key.pie.pieces[dir];
+                    current.piece = current.pie.pieces[dir];
                     $(current.piece).addClass("gbv");
                     console.log("dir is "+dir);
                 };
@@ -120,9 +128,7 @@
 
         function keyDidUp (e) {
             e.preventDefault();
-            var $this = current.piece ||  current.key.pie.center;
-
-            console.log($this.key);
+            var $this = current.piece ||  current.pie.center;
 
             if($this.key.length <=  2){
                 // Insert charactor
@@ -152,11 +158,11 @@
                 }
             };
             $(current.key).removeClass("ggr").addClass("gg");
-            current.key.removeChild(current.key.pie);
+            current.key.removeChild(current.pie);
 
-//            current.event = null;
-//            current.key = null;
-//            current.piece = null;
+            current.event = null;
+            current.key = null;
+            current.piece = null;
         };
 
         function pieWillAppear (e) {
@@ -165,7 +171,12 @@
         function pieWillDisspear (e) {
         };
 
-        function textareaDidChange (e) {
+        function textareaDidChange (e,data) {
+            console.log("inserted : " + data.inserted);
+        };
+
+        function textareaDidDelete (e,data) {
+            console.log("deleted : " + data.deleted);
         };
     });
 
@@ -190,7 +201,7 @@
 
             this.value = prev + char + next; 
             this.setCaret(newpos);
-            $(this).trigger("textDidChange",{inserted : char});
+            $(this).trigger("textDidChange",[{inserted : char}]);
         },
         insertPat : function(pat){
             var pos = this.selectedRange(),
@@ -201,7 +212,7 @@
 
             this.value = prev + pat + next;
             this.setSelectionRange(pos.s,(prev+pat).length);
-            $(this).trigger("textDidChange",{inserted : pat});
+            $(this).trigger("textDidChange",[{inserted : pat}]);
         },
         delete : function(){
             var selected = this.selectedStr(),
@@ -218,7 +229,7 @@
                     this.setCaret(prev.length);
                 }
             }
-            $(this).trigger("textDidDelete", {deleted : selected}); 
+            $(this).trigger("textDidDelete", [{deleted : text.substr(pos.s,pos.e)}]); 
         },
         selectedRange : function(){
             return {s : this.selectionStart, e: this.selectionEnd}
@@ -301,7 +312,8 @@
     // @implementation of Pie
     Pie = {
         init : function(key) {
-            var _center;
+            var _center,
+            pieces = [];
 
             this.className = "pie gbl";
             _center = $.extend(div(),PieCenter).init(key);
@@ -310,9 +322,10 @@
 
             for(var i = 0, max = 5, p = {} ; i < max ; i++){
                 p = $.extend(div(),PiePiece).init(key,i);
-                this.pieces.push(p);
+                pieces.push(p);
                 this.appendChild(p);
             }
+            this.pieces = pieces;
             return this;
         },
         center : {},
