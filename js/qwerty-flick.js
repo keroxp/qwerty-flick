@@ -187,7 +187,7 @@
             var $this = $(this);
 
             this.id = "textarea";
-            //            this.disabled = "disabled";
+            this.disabled = "disabled";
             return this;
         },
         selectedRange : function(){
