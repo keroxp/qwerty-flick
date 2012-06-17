@@ -12,12 +12,15 @@
     PieCenter= {},
     PiePiece = {},
     // Controller Classes
+    MainViewController = {},
     AutoCorrectController = {},
+    WindowEventDelegate = {},
     // Data
     rows = [],
     dictionary = {},
     // Constants
     PI = 0.0,
+    iPhone = false,
     iPad   = false,
     Android = false,
     // Helper objectas ( an interface of event handlers)
@@ -28,42 +31,49 @@
     getDirection = function(cure,preve){},
     stopEvent   = function(event){};
 
-    // Main Class 
+    // Initialiser 
     $(function(){
+
         // private vars
         var MAIN,
         // Controller
         corrector = {},
+        eventController = {},
         // instances
         textarea = {},
         keyboard = {},
         candies  = {},
         row = {},
-        key = {},
-        // iVars 
-        current = {};
+        key = {};
 
         // Instantiate auto-correct-controller
-        corrector = $.extend({},AutoCorrectController);
+        corrector = $.extend({},AutoCorrectController).init();
+        eventController = $.extend({}, WindowEventDelegate).init();
+
+        // Attach window object with event controller 
+        if(iPhone || iPad || Android){
+            $(window).on("touchstart", ".key", eventController.ondown);
+            $(window).on("touchmove",  eventController.onmove);
+            $(window).on("touchend",  eventController.onup);
+        }else{
+            $(window).on("mousedown", ".key", eventController.ondown);
+            $(window).on("mousemove", eventController.onmove);
+            $(window).on("mouseup"  , eventController.onup);
+        }
 
         // Extend DOM objects to UI objects (actually, we instantiate UI Objects which inherit from HTMLDivElement object) 
         textarea = $.extend($("#textarea")[0], Textarea).init(); 
-        $(textarea).on("textDidChange", textareaDidChange);
-        $(textarea).on("textDidDelete", textareaDidDelete);
-
         keyboard = $.extend($("#keyboard")[0], Keyboard).init();
         candies  = $.extend($("#candies")[0],  Candies).init();
 
-        // Attach window object with event handler
-        if(iPad || Android){
-            $(keyboard).on("touchstart", ".key", keyDown);
-            $(window).on("touchmove", keyDidDown);
-            $(window).on("touchend", keyDidUp);
-        }else{
-            $(keyboard).on("mousedown", ".key", keyDidDown);
-            $(window).on("mousemove", keyDidMove);
-            $(window).on("mouseup"  , keyDidUp);
-        }
+        // Attach Delegate with this object 
+
+        $(window).on("keyDidDown", keyDidDown);
+        $(window).on("keyDidMove", keyDidMove);
+        $(window).on("keyDidUp",   keyDidUp);
+        $(textarea).on("textDidChange", textareaDidChange);
+        $(textarea).on("textDidDelete", textareaDidDelete);
+
 
         // Setup keys for keyboard
         for(var i = 0 ; i < rows.length ; i++){
@@ -81,61 +91,48 @@
             keyboard.appendChild(row);
         };
 
-        // Event delegate functions (these will be called when some event happend)
+        // Deelegate methods
 
-        function keyDidDown (e) {
-            e.preventDefault();
-            var p = $.extend(div(),Pie).init(this.key);
+        function keyDidDown (e,event,key) {
+            if(e){
+                //Create Pie object
+                var pie = $.extend(div(),Pie).init(key.key);
+                key.appendChild(pie);
+                key.pie = pie;
+                pie.centeringPieces();
+                // 凹ませる
+                key.dent();
+            }
+        }
 
-            // 凹ませる
-            $(this).removeClass("gg").addClass("ggr");
-            //while(pieWillAppear()){};
-            pieWillAppear();
-            this.appendChild(p);
-            // Centering pieces
-            for(var i = 0 , max = p.pieces.length ; i < max ; i++){
-                p.pieces[i].style.left = p.pieces[i].offsetLeft - (p.pieces[i].offsetWidth  / 2 - p.offsetWidth ) - p.offsetWidth  / 2 - 4 + "px";
-                p.pieces[i].style.top  = p.pieces[i].offsetTop  - (p.pieces[i].offsetHeight / 2 - p.offsetHeight) - p.offsetHeight / 2 - 4 + "px";
-                p.pieces[i].style.left = p.pieces[i].offsetLeft + 70 * Math.cos((72 * i - 90) * PI / 180) + "px";
-                p.pieces[i].style.top  = p.pieces[i].offsetTop  + 70 * Math.sin((72 * i - 90) * PI / 180) + "px";
-            };
-            // Register buffers 
-            current.event = e;
-            current.key   = this;
-            current.pie   = p;
-        };
-
-        function keyDidMove (e) {
-            e.preventDefault();
-            // When we're handling some mouse click event
-            if(current.event){
-                var dir = getDirection(e,current.event),
-                dis = getDistance(e,current.event);
+        function keyDidMove (e,event,key) {
+            if(e){
+                // When we're handling some mouse click event
+                var dir = getDirection(event,current.event),
+                dis = getDistance(event,current.event);
                 // If mouse is out of PieCenter (in other words, mouse is on PiePieces or out of Pie)
                 if(dis > 5 && !current.piece){
-                    current.piece = current.pie.pieces[dir];
+                    current.piece = current.key.pie.pieces[dir];
                     $(current.piece).addClass("gbv");
                 };
 
                 if(current.piece && current.piece.direction !== dir){
                     $(current.piece).removeClass().addClass("pie-piece");
-                    current.piece = current.pie.pieces[dir];
+                    current.piece = current.key.pie.pieces[dir];
                     $(current.piece).addClass("gbv");
                 };
             };
-        };
+        }
 
-        function keyDidUp (e) {
+        function keyDidUp (e,event,key,piece) {
             e.preventDefault();
-            if(current.event){
-                var $this = current.piece ||  current.pie.center;
-
-                if($this.key.length <=  2){
+            if(e){
+                if(key.key.length <=  2){
                     // Insert charactor
-                    textarea.insertChar($this.getAttribute("data-key"));
+                    textarea.insertChar(piece.key)
                 }else{
                     // Implement metakeys function
-                    switch($this.key){
+                    switch(key.key){
                         case "delete" :
                             textarea.delete(); 
                             break;
@@ -150,53 +147,39 @@
                             textarea.insertChar("\n");
                             break;
                         case "num" :
+                            $(keyboard.rows[0]).toggle();
                             break;
                         default :
-                            console.log("invalid meta key : "+$this.key);
+                            console.log("invalid meta key : "+ key.key);
                             return false;
                             break;
                     }
                 };
-                $(current.key).removeClass("ggr").addClass("gg");
-
-                pieWillDisspear();
-
-                current.key.removeChild(current.pie);
-
-                current.event = null;
-                current.key = null;
-                current.piece = null;
+                // 凸ませる
+                key.push();
             }
-        };
-
-        function pieWillAppear (e) {
-            return true;
-        };
-
-        function pieWillDisspear (e) {
-            return true;
-        };
+        }
 
         function textareaDidChange (e,data) {
-            console.log("inserted : " + data.inserted); 
+            console.log("inserted : " + data.inserted);
             var corrected = corrector.sandwhich(data.inserted);
             if(corrected){
                 console.log("corrected is " + corrected);
                 textarea.correct(corrected);
             }
             return true;
-        };
+        }
 
         function textareaDidDelete (e,data) {
             console.log("deleted : " + data.deleted);
             return true;
-        };
+        }
 
         function textDidCorrect (e,data){
-        };
+
+        }
 
     });
-
 
     // @implementation of Textarea
     Textarea = {
@@ -204,7 +187,7 @@
             var $this = $(this);
 
             this.id = "textarea";
-//            this.disabled = "disabled";
+            //            this.disabled = "disabled";
             return this;
         },
         selectedRange : function(){
@@ -262,12 +245,11 @@
         },
         correct : function(text){
             var pos = this.selectedRange();
-            console.log(pos.s + " : " + pos.e);
             console.log(text);
             if(pos.s === pos.e){
-                this.setSelectionRange(pos.s - text.length - 1, text.length);
-//                this.insertChar(text);
-            };
+                this.setSelectionRange(pos.s - text.length, pos.e);
+                this.insertChar(text);
+            }
         }
     };
 
@@ -325,7 +307,13 @@
         },
         char : {},
         key : "",
-        isMetaKey : false
+        isMetaKey : false,
+        dent : function(){
+            $(this).removeClass("gg").addClass("ggr");
+        },
+        push : function(){
+            $(this).removeClass("ggr").addClass("gg");
+        }
     };
 
     KeyChar = {
@@ -339,16 +327,15 @@
     // @implementation of Pie
     Pie = {
         init : function(key) {
-            var _center,
+            var center = {},
             pieces = [];
-
             this.className = "pie gbl";
-            _center = $.extend(div(),PieCenter).init(key);
-            this.center = _center;
-            this.appendChild(_center);
+            center = $.extend(div(),PieCenter).initWithKey(key);
+            this.center = center;
+            this.appendChild(center);
 
             for(var i = 0, max = 5, p = {} ; i < max ; i++){
-                p = $.extend(div(),PiePiece).init(key,i);
+                p = $.extend(div(),PiePiece).initWithKeyForIndex(key,i);
                 pieces.push(p);
                 this.appendChild(p);
             }
@@ -356,12 +343,21 @@
             return this;
         },
         center : {},
-        pieces : []
+        pieces : [],
+        centeringPieces : function(){
+            for(var i = 0 , max = this.pieces.length ; i < max ; i++){
+                this.pieces[i].style.left = this.pieces[i].offsetLeft - (this.pieces[i].offsetWidth  / 2 - this.offsetWidth ) - this.offsetWidth  / 2 - 4 + "px";
+                this.pieces[i].style.top  = this.pieces[i].offsetTop  - (this.pieces[i].offsetHeight / 2 - this.offsetHeight) - this.offsetHeight / 2 - 4 + "px";
+                this.pieces[i].style.left = this.pieces[i].offsetLeft + 70 * Math.cos((72 * i - 90) * PI / 180) + "px";
+                this.pieces[i].style.top  = this.pieces[i].offsetTop  + 70 * Math.sin((72 * i - 90) * PI / 180) + "px";
+            };
+            return this;
+        }
     }
 
     // @implementation of PieCenter
     PieCenter = {
-        init : function(key){
+        initWithKey : function(key){
             this.className = "pie-char";
             this.dataset.key = key;
             this.innerHTML = dictionary[key].center;
@@ -373,17 +369,51 @@
 
     // @implementation of PiePiece
     PiePiece = {
-        init : function(key,index) {
+        initWithKeyForIndex : function(key,index) {
             this.className = "pie-piece";
             this.dataset.key = dictionary[key].pieces[index];
             this.innerHTML = dictionary[key].pieces[index];
-            this.key = key;
+            this.key = dictionary[key].pieces[index];
             this.direction = index;
             return this;
         },
         key : "",
         direction : -1 
     }
+
+    // @implementation of WindowEventDelegate 
+    // (i.e. This class will be used for extending window object)
+
+    WindowEventDelegate = {
+        init : function(){
+            
+            return this;
+        },
+        current : {},
+        ondown : function(e){
+            e.preventDefault();
+            current.event = e;
+            current.key = this;
+            $(window).trigger("keyDidDown", [e,this]);
+        },
+        onmove : function(e){
+            e.preventDefault();
+            if(current.event){
+                $(window).trigger("keyDidMove", [e,current.key]);
+            }
+        },
+        onup   : function(e){
+            e.preventDefault();
+            if(current.event){
+                var piece = current.piece || current.key.pie.center;
+                $(window).trigger("keyDidUp", [e,current.key,piece]);
+                current.event = null;
+                current.key.removeChild(current.key.pie);
+                current.key = null;
+                current.piece = null;
+            }
+        }
+    };
 
     // @implementation of AutoCorecctor
 
@@ -409,7 +439,7 @@
                 this.buffer.push(char);
                 return false;
             }else if(this.buffer.length === 1 && this.isKana(this.buffer[0]) && this.isKana(char)){
-            // But don't allow repeat of Kanas
+                // But don't allow repeat of Kanas
                 this.buffer[0] = char;
                 return false;
             }
@@ -425,9 +455,9 @@
                 count = this.numberOfRepeats();
                 if(this.buffer[len-1] == "n"){
                     this.replaceBuffer("ん", { from : 1 , to : len - 1});
-//                    if(count!=1){
-//                        this.buffer.splice(len-1);
-//                    };
+                    //                    if(count!=1){
+                        //                        this.buffer.splice(len-1);
+                        //                    };
                 }else{
                     this.replaceBuffer("っ", { from : 1 , to : len - 1});
                 };
@@ -466,7 +496,7 @@
     // Utility functions
 
     getPosition = function(e){
-        if(e.touches){
+        if(iPad || iPhone || Android){
             return { x : e.changedTouches[0].pageX , y : e.changedTouches[0].pageY };
         }else{
             return { x : e.pageX , y : e.pageY };
@@ -532,16 +562,16 @@
 
     // Data for Pie Menu 
     dictionary = {
-        "1" : {center : "1", pieces : [] },
-        "2" : {center : "2", pieces : [] },
-        "3" : {center : "3", pieces : [] },
-        "4" : {center : "4", pieces : [] },
-        "5" : {center : "5", pieces : [] },
-        "6" : {center : "6", pieces : [] },
-        "7" : {center : "7", pieces : [] },
-        "8" : {center : "8", pieces : [] },
-        "9" : {center : "9", pieces : [] },
-        "0" : {center : "0", pieces : [] },
+        "1" : {center : "1", pieces : ["","","","","",""] },
+        "2" : {center : "2", pieces : ["","","","","",""] },
+        "3" : {center : "3", pieces : ["","","","","",""] },
+        "4" : {center : "4", pieces : ["","","","","",""] },
+        "5" : {center : "5", pieces : ["","","","","",""] },
+        "6" : {center : "6", pieces : ["","","","","",""] },
+        "7" : {center : "7", pieces : ["","","","","",""] },
+        "8" : {center : "8", pieces : ["","","","","",""] },
+        "9" : {center : "9", pieces : ["","","","","",""] },
+        "0" : {center : "0", pieces : ["","","","","",""] },
         "q" : {center : "q", pieces : ["くぁ", "くぃ", "く", "くぇ", "くぉ"] },
         "w" : {center : "w", pieces : ["わ", "うぃ", "う", "うぇ", "を"] },
         "e" : {center : "e", pieces : ["え", "え", "え", "え", "え"] },
@@ -581,7 +611,8 @@
 
     // Constants
     PI = 3.14159265;
+    iPhone = (navigator.userAgent.indexOf("iPhone") < 0) ? false : true;
     iPad = (navigator.userAgent.indexOf("iPad") < 0 ) ?  false : true;
     Android = (navigator.userAgent.indexOf("Android") < 0 ) ? false : true;
-    ;
+
 }());
