@@ -29,10 +29,19 @@
     getPosition = function(e){},
     getDistance = function(cure,preve){},
     getDirection = function(cure,preve){},
-    stopEvent   = function(event){};
+    stopEvent   = function(event){},
+    // Debug
+    $debug1,
+    $debug2,
+
+    ENDVAR;
+
 
     // Initialiser 
     $(function(){
+
+        $debug1 = $("#debug1")[0];
+        $debug2 = $("#debug2")[0];
 
         // private vars
         var MAIN,
@@ -48,18 +57,24 @@
 
         // Instantiate auto-correct-controller
         corrector = $.extend({},AutoCorrectController).init();
-        eventController = $.extend({}, WindowEventDelegate).init();
+        //eventController = $.extend({}, WindowEventDelegate).init();
 
         // Attach window object with event controller 
         if(iPhone || iPad || Android){
-            $(window).on("touchstart", ".key", eventController.ondown);
-            $(window).on("touchmove",  eventController.onmove);
-            $(window).on("touchend",  eventController.onup);
+//            $(window).on("touchstart", ".key", keyDidDown);
+//            $(window).on("touchmove",  keyDidMove);
+//            $(window).on("touchend",  keyDidUp);
+//            window.addEventListener("touchmove", keyDidMove, false);
+//            window.addEventListener("touchend" , keyDidUp, false);
+            window.ontouchmove = keyDidMove;
+            window.ontouchend = keyDidUp;
         }else{
-            $(window).on("mousedown", ".key", eventController.ondown);
-            $(window).on("mousemove", eventController.onmove);
-            $(window).on("mouseup"  , eventController.onup);
+            $(window).on("mousedown", ".key", keyDidDown);
+            $(window).on("mousemove", keyDidMove);
+            $(window).on("mouseup"  , keyDidUp);
         }
+
+        
 
         // Extend DOM objects to UI objects (actually, we instantiate UI Objects which inherit from HTMLDivElement object) 
         textarea = $.extend($("#textarea")[0], Textarea).init(); 
@@ -68,9 +83,6 @@
 
         // Attach Delegate with this object 
 
-        $(window).on("keyDidDown", keyDidDown);
-        $(window).on("keyDidMove", keyDidMove);
-        $(window).on("keyDidUp",   keyDidUp);
         $(textarea).on("textDidChange", textareaDidChange);
         $(textarea).on("textDidDelete", textareaDidDelete);
 
@@ -82,6 +94,10 @@
             for(var j = 0 ; j < rows[i].length ; j++){
                 // Instantiate Key object
                 key = $.extend(div(),Key).init(rows[i][j]);
+                if(iPad || iPhone || Android){
+//                    key.addEventListener("touchstart", keyDidDown, false);
+                    key.ontouchstart = keyDidDown;
+                }
                 // Add reference with parent node and append it to DOM tree
                 row.keys.push(key);
                 row.appendChild(key);
@@ -93,23 +109,28 @@
 
         // Deelegate methods
 
-        function keyDidDown (e,event,key) {
-            if(e){
-                //Create Pie object
-                var pie = $.extend(div(),Pie).init(key.key);
-                key.appendChild(pie);
-                key.pie = pie;
-                pie.centeringPieces();
-                // 凹ませる
-                key.dent();
-            }
+        function keyDidDown (e) {
+            e.preventDefault();
+            //Create Pie object
+            var key = this,
+            pie = $.extend(div(),Pie).init(key.key);
+            key.appendChild(pie);
+            key.pie = pie;
+            pie.centeringPieces();
+            // 凹ませる
+            key.dent();
+
+            current.event = e;
+            current.key = key;
         }
 
-        function keyDidMove (e,event,key) {
-            if(e){
+        function keyDidMove (e) {
+            e.preventDefault();
+            if(current.event){
                 // When we're handling some mouse click event
-                var dir = getDirection(event,current.event),
-                dis = getDistance(event,current.event);
+//                console.log(event.touches);
+                var dir = getDirection(e,current.event),
+                dis = getDistance(e,current.event);
                 // If mouse is out of PieCenter (in other words, mouse is on PiePieces or out of Pie)
                 if(dis > 5 && !current.piece){
                     current.piece = current.key.pie.pieces[dir];
@@ -124,15 +145,18 @@
             };
         }
 
-        function keyDidUp (e,event,key,piece) {
+        function keyDidUp (e) {
             e.preventDefault();
-            if(e){
-                if(key.key.length <=  2){
+            if(current.event){
+                if(!current.piece){
+                    current.piece = current.key.pie.center;
+                }
+                if(current.key.key.length <=  2){
                     // Insert charactor
-                    textarea.insertChar(piece.key)
+                    textarea.insertChar(current.piece.key)
                 }else{
                     // Implement metakeys function
-                    switch(key.key){
+                    switch(current.key.key){
                         case "delete" :
                             textarea.delete(); 
                             break;
@@ -150,13 +174,17 @@
                             $(keyboard.rows[0]).toggle();
                             break;
                         default :
-                            console.log("invalid meta key : "+ key.key);
+                            console.log("invalid meta key : "+ current.key.key);
                             return false;
                             break;
                     }
                 };
                 // 凸ませる
-                key.push();
+                current.event = null;
+                current.key.push();
+                current.key.removeChild(current.key.pie);
+                current.key = null;
+                current.piece = null;
             }
         }
 
@@ -319,6 +347,9 @@
     KeyChar = {
         init : function(key){
             this.className = "key-char";
+            if(iPhone){
+                this.className += " key-char-iPhone";
+            };
             this.innerHTML = dictionary[key].center.toUpperCase();
             return this;
         }
@@ -386,27 +417,29 @@
 
     WindowEventDelegate = {
         init : function(){
-            
             return this;
         },
-        current : {},
         ondown : function(e){
             e.preventDefault();
-            current.event = e;
+            // Mouse or Touch Event
+            console.log(event);
+            // jQuery Event
+            console.log(e);
+            current.event = event;
             current.key = this;
-            $(window).trigger("keyDidDown", [e,this]);
+            $(window).trigger("keyDidDown", [event,this]);
         },
         onmove : function(e){
             e.preventDefault();
             if(current.event){
-                $(window).trigger("keyDidMove", [e,current.key]);
+                $(window).trigger("keyDidMove", [event,current.key]);
             }
         },
         onup   : function(e){
             e.preventDefault();
             if(current.event){
                 var piece = current.piece || current.key.pie.center;
-                $(window).trigger("keyDidUp", [e,current.key,piece]);
+                $(window).trigger("keyDidUp", [event,current.key,piece]);
                 current.event = null;
                 current.key.removeChild(current.key.pie);
                 current.key = null;
@@ -496,7 +529,7 @@
     // Utility functions
 
     getPosition = function(e){
-        if(iPad || iPhone || Android){
+        if(e.touches){
             return { x : e.changedTouches[0].pageX , y : e.changedTouches[0].pageY };
         }else{
             return { x : e.pageX , y : e.pageY };
@@ -506,7 +539,6 @@
     getDistance = function(curE, prevE){
         var curPos = getPosition(curE),
         prevPos = getPosition(prevE);
-
         return Math.floor(Math.sqrt(Math.pow((curPos.x - prevPos.x),2) + Math.pow((curPos.y - prevPos.y),2)));
     };
 
@@ -516,6 +548,9 @@
         dx = curpos.x - prevPos.x, 
         dy = -(curpos.y - prevPos.y),
         angle = Math.atan2(dy,dx);
+
+        $debug1.value = "x : " + curpos.x + " y : " + curpos.y;
+        $debug2.value = "x : " + prevPos.x + " y : " + prevPos.y;
 
         if(angle < 0 ){
             angle += PI * 2;
@@ -537,7 +572,7 @@
             // 右下
             return 2;
         }else{
-            console.log("invalid angle");
+            console.log("invalid angle : "+angle);
         }
     };
 

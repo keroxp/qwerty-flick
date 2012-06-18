@@ -9,6 +9,11 @@
     visibility: hidden;
 }
 
+#debug input{
+    display:inline-block;
+    margin-left:10px;
+}
+
 html,body {
     height:100%;
     position:relative;
@@ -159,6 +164,11 @@ html,body {
     border-radius:10px;
     padding:19px 0;
     color: #333;
+}
+
+.key .key-char-iPhone {
+    padding:5px 0 !important;
+    font-size:18px !important;
 }
 
 /*  Flick */
