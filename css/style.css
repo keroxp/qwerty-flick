@@ -55,7 +55,6 @@ html,body {
 
 #candybox-wrapper{
     width:100%;
-    height:44px;
     margin:0 auto;
     box-sizing:border-box;
     border-top:1px solid #333;
@@ -65,6 +64,7 @@ html,body {
 #candybox {
     width:100%;
     max-width:1024px;
+    /*height:5%;*/
     margin:0 auto;
     position:relative;
     overflow-x:auto;
@@ -103,10 +103,9 @@ html,body {
 
 #keyboard {
     width: 100%;
-    max-width:1024px;
-    padding:1%;
+/*    max-width:1024px; */
+    max-width:320px;
     margin:0 auto;
-    margin-top:-1%;
     position: relative;
 }
 
@@ -115,20 +114,21 @@ html,body {
     position:relative;
     clear:both;
     float:left;
+    /*
     margin-left:-1%;
     margin-top:1%;
-    padding:0 1%;
+    */
+    padding:0; 
 }
-
+/*
 #key-row-2 {
     padding-left:5%;
 }
 
 #key-row-0 {
     padding-left:5%;
-    display:none;
 }
-
+*/
 .key , .key *{
     cursor : pointer;
     user-select:none;
@@ -137,37 +137,30 @@ html,body {
 }
 
 .key {
-    width: 8%;
+    position:absolute;
+    width:60px;
+    height:48px;
     /*    border: 1px solid #555; */
     box-sizing: border-box;
-    position:relative;
-    float:left;
-    border-radius: 10px;
-    margin-left:1%;
-    font-size: 24px;
+    /* position:relative; */
+    /* float:left; */
+    border-radius: 2px;
+    /* margin-left:3px; */
     /*  text-shadow: 1px 1px 2px white */;
     text-align:center;
 
 }
 
-.key-enter {
-    width:13%!important;
-}
-
-.key-space {
-    width:44%!important;
-}
-
-
 .key .key-char {
     border:1px solid #555;
-    border-radius:10px;
-    padding:19px 0;
+    border-radius: 2px;
+    font-size: 18px;
+    padding:10px 0;
     color: #333;
 }
 
 .key .key-char-iPhone {
-    padding:5px 0 !important;
+    padding:10px 0 !important;
     font-size:18px !important;
 }
 

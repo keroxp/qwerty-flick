@@ -10,16 +10,7 @@
     KeyChar  = {},
     // Controller Classes
     AutoCorrectController = {},
-    // Data
-    rows = [],
-    dictionary = {},
-    mothers = [],
-    children = [],
-    // Constants
-    PI = 0.0,
-    iPhone = false,
-    iPad   = false,
-    Android = false,
+  // Data
     // Helper objectas ( an interface of event handlers)
     current = {},
     buffer = [],
@@ -29,6 +20,7 @@
     getPosition = function(e){},
     getDistance = function(cure,preve){},
     getDirection = function(cure,preve){},
+    getKeyPressed = function(pos){},
     stopEvent   = function(event){},
     // Debug
     $debug1,
@@ -36,12 +28,71 @@
 
     __ENDVAR__;
 
-
+    // Data for each rows of keyboard
+    const CONSTANTS,
+    distanceToRow2 = [100,50,0];
+    keyInfo = {
+        margin : {
+            top : 4,
+            left : 4
+        },
+        size : {
+            w : 60,
+            h : 48
+        }
+    },
+    rows = [
+        ["あ","か","さ","た","な"],
+        ["は","ま","や","ら","わ"],
+        ["alt","space","symbol","enter","delete"]
+    ],
+    // Data for Pie Menu 
+    alterKeys = {
+        "あ" : ["あ","い","う","え","お"],
+        "か" : ["か","き","く","け","こ"],
+        "さ" : ["さ","し","す","せ","そ"],
+        "た" : ["た","ち","つ","て","と"],
+        "な" : ["な","に","ぬ","ね","の"],
+        "は" : ["は","ひ","ふ","へ","ほ"],
+        "ま" : ["ま","み","む","め","も"],
+        "や" : ["や","い","ゆ","え","よ"],
+        "ら" : ["ら","り","る","れ","ろ"],
+        "わ" : ["わ", "", "ん","", "を"],
+        "symbol" : ["、","。","！","？","ー"]
+    },
+    dictionary = {
+        "あ" : {a : "あ", i : "い", u :  "う", e : "え", o : "お"},
+        "か" : {a : "か", i : "き", u :  "く", e : "け", o : "こ", ya : "きゃ", yi : "きぃ", yu : "きゅ", ye : "きぇ", yo : "きょ"},
+        "さ" : {a : "さ", i : "し", u :  "す", e : "せ", o : "そ", ya : "しゃ", yi : "し", yu : "しゅ", ye : "しぇ", yo : "しょ"},
+        "た" : {a : "た", i : "ち", u :  "つ", e : "て", o : "と", ya : "ちゃ", yi : "ち", yu : "ちゅ", ye : "ちぇ", yo : "ちょ" },
+        "な" : {a : "な", i : "に", u :  "ぬ", e : "ね", o : "の", ya : "にゃ", yi : "にぃ", yu : "にゅ", ye : "にぇ", yo : "にょ"},
+        "は" : {a : "は", i : "ひ", u :  "ふ", e : "へ", o : "ほ", ya : "ひゃ", yi : "ひぃ", yu : "ひゅ", ye : "ひぇ", yo : "ひょ"},
+        "ま" : {a : "ま", i : "み", u :  "む", e : "め", o : "も", ya : "みゃ", yi : "みぃ", yu : "みゅ", ye : "みぇ", yo : "みょ"},
+        "や" : {a : "や", i : "い", u :  "ゆ", e : "え", o : "よ"},
+        "ら" : {a : "ら", i : "り"  , u :  "る"  , e : "れ"  , o : "ろ" , ya : "りゃ", yi : "い", yu : "りゅ", ye : "いぇ", yo : "よ"},
+        "わ" : {a : "わ", i : "うぃ", u :  "う"  , e : "うぇ", o : "を" },
+        "enter"   : {center : "↩", pieces : ["","","","",""]},
+        "command" : ["","","","",""],
+        "shift"   : ["","","","",""],
+        "space"   : {center : "", pieces : [] },
+        "symbol" :  {center : "、。", pieces : ["、","。","！","？","ー"]},
+        "alt" : { center : "＠" , pieces : [] },
+        "delete"  : {center : "⌫", pieces : ["","","","",""] },
+        "num"     : {center : "123",pieces : ["","","","",""] }
+    },
+    children = ["か","さ","た","な","は","ま","や","ら","わ"],
+    mothers = ["あ","い","う","え","お"],
+    PI = 3.14159265,
+    iPhone = (navigator.userAgent.indexOf("iPhone") < 0) ? false : true,
+    iPad = (navigator.userAgent.indexOf("iPad") < 0 ) ?  false : true,
+    Android = (navigator.userAgent.indexOf("Android") < 0 ) ? false : true; 
     // Initialiser 
     $(function(){
 
-        $debug1 = $("#debug1")[0];
-        $debug2 = $("#debug2")[0];
+        $debug1 = document.createElement("input");
+        $debug2 = document.createElement("input");
+
+        $("#debug").append($debug1,$debug2);
 
         // private vars
         var MAIN,
@@ -64,8 +115,11 @@
             $(window).on("touchmove",  keyDidMove);
             $(window).on("touchend",  keyDidUp);
         }else{
+            $(window).on("mousedown", ".key" , keyDidDown);
+            $(window).on("mouseover" , ".key" , keyDidOver);
+            $(window).on("mouseout" , ".key" , keyDidOut);
             $(window).on("mousemove", keyDidMove);
-            $(window).on("mouseup"  , mouseDidUp);
+            $(window).on("mouseup"  , keyDidUp);
         }
 
         // Extend DOM objects to UI objects (actually, we instantiate UI Objects which inherit from HTMLDivElement object) 
@@ -86,17 +140,17 @@
             for(var j = 0 ; j < rows[i].length ; j++){
                 // Instantiate Key object
                 key = $.extend(div(),Key).init(rows[i][j]);
-                $(key).on("mousedown", keyDidDown);
-                $(key).on("mouseup"  , keyDidUp);
-                $(key).on("mouseover", keyDidOver);
-                $(key).on("mouseout" , keyDidOut);
                 // Add reference with parent node and append it to DOM tree
                 row.keys.push(key);
                 row.appendChild(key);
+                key.style.top = keyInfo.margin.top/2 + i * (keyInfo.size.h + keyInfo.margin.top) + "px";
+                key.style.left = keyInfo.margin.left/2 + j * (keyInfo.size.w + keyInfo.margin.left) + "px";
+                keyboard.appendChild(row);
             }
             // Add reference with parent node and append it to DOM tre
-            keyboard.rows.push(row);
+            keyboard.rows[i] = row;
             keyboard.appendChild(row);
+            keyboard.style.height = rows.length * (keyInfo.size.h + keyInfo.margin.top) + "px";
         };
 
         // Deelegate methods
@@ -106,127 +160,190 @@
             var withouts = [];
             // 凹ませる
             this.dent();
-            if(!isMotherChar(this.key)){
-               withouts = ["a","i","u","e","o"]; 
-               withouts.push("y");
-               withouts.push("h");
-            }else if(isMotherChar(this.key)){
-                withouts = [];
+            if(typeof alterKeys[this.key] !== "undefined"){
+//                textarea.value = "offs x : " + this.offsetLeft + " y : " + this.offsetTop;
+                keyboard.modifyKeysWithKeyAtRowIndex(alterKeys[this.key], 2);
+                withouts = alterKeys[this.key];
+                keyboard.modifyKeys({
+                    type : "disable",
+                    withouts : withouts
+                });
+            }else{
+                console.log("alterKeys not found for : "+this.key);
             }
 
-            keyboard.modifyKeys({
-                type : "disable",
-                withouts : withouts
-            });
+            var keyOffset = {
+                left : this.offsetLeft,
+                top : this.offsetTop
+            };
+
+            var rowHeight = keyInfo.margin.top + keyInfo.size.h;
+            var rowWidth  = keyInfo.size.w + keyInfo.margin.left;
+
+            var ri = -1;
+            if(0 < keyOffset.top && keyOffset.top < rowHeight){
+                ri = 0;
+            }else if(rowHeight <= keyOffset.top && keyOffset.top < 2 * rowHeight){
+                ri = 1;
+            }else if(2 * rowHeight <= keyOffset.top && keyOffset.top < 3 * rowHeight){
+                ri = 2;
+            }
 
             buffer.push(this.key);
-            current.event = e;
+            current.e = e;
+            current.pos = getPosition(e);
             current.key = this;
+            $debug1.value = "cur x : " + current.pos.x + " y : " + current.pos.y;
         }
 
         function keyDidMove (e) {
             e.preventDefault();
-            if(current.event){
+            if(current.e && (iPad || Android || iPhone)){
+                var nowPos = getPosition(e);
+//                this.dent();
+                $debug2.value = "now x : " + nowPos.x + " y : " + nowPos.y;
+                var index = getKeyIndexPressed(nowPos);
+//                textarea.value = index;
+                // mouseout処理
+                if(current.keyIndex && current.keyIndex != index){
+                    var key = keyboard.rows[2].keys[current.keyIndex];
+                    key.push();
+                }
+                // mouseover処理
+                if(index !== false){
+                    var key = keyboard.rows[2].keys[index];
+//                    textarea.value = key.key;
+                    key.dent();
+                    current.key = key;
+                }
+                current.keyIndex = index;
             };
+
+            function getKeyIndexPressed (pos) {
+                var kw = keyInfo.size.w;
+                var kh = keyInfo.size.h;
+                var kmt = keyInfo.margin.top;
+                var kml = keyInfo.margin.left;
+                var x = pos.x;
+
+//                if(257 <= pos.y && pos.y <= 300){
+                    if(0 < x && x < kw+kml){
+                        return 0;
+                    }else if(kw+kml <= x && x < 2*(kw+kml)){
+                        return 1;
+                    }else if(2*(kw+kml) <= x && x < 3*(kw+kml)){
+                        return 2;
+                    }else if(3*(kw+kml) <= x && x < 4*(kw+kml)){
+                        return 3;
+                    }else if(4*(kw+kml) <= x && x < 5*(kw+kml)){
+                        return 4;
+                    }
+//                }else{
+//                    return false;
+//                }
+            }
         }
 
         function keyDidOver (e){
             e.preventDefault();
-            if(current.event){
+            if(current.e){
                 if(this.isEnabled){
                     this.dent();
-                    if(this.key == "y"){
-                        keyboard.modifyKeys({
-                            type : "disable",
-                            with : ["h"]
-                        })
-                    }else if(this.key == "h"){
-                        keyboard.modifyKeys({
-                            type : "disable",
-                            with : ["y"]
-                        })
-                    }else if(isMotherChar(this.key)){
-                        var index = children.indexOf(this.key),
-                        _with = ["a","i","u","e","o","y","h"];
-                        _with.splice(index,1).pop();
-                        /*
-                        keyboard.modifyKeys({   
-                            type : "disable",
-                            with : _with 
-                        });
-                        */
-                    }
+//                    var _with = [];
+//                    for(var i = 0 ; i < 5 ; i++){
+//                        if(this.key != alterKeys[current.key.key][i]){
+//                            _with.push(alterKeys[current.key.key][i]);
+//                        }
+//                    }
+//                    keyboard.modifyKeys({
+//                        type : "disable",
+//                        with : _with 
+//                    });
                     buffer.push(this.key);
                 }
-            };
+            }
         }
 
         function keyDidOut (e){
             e.preventDefault();
-            if(current.event && this !== current.key){
+            if(current.e && this !== current.key){
                 if(this.isEnabled){
-                    if(this.key == "y" || this.key == "h" && (this.isEnabled)){
-                        this.dent();
-                    }else if(isMotherChar(this.key)){
-                        this.push();
-                        buffer.splice(buffer.length-1).pop;
-                    }
+                    this.push();
+                    buffer.splice(buffer.length-1).pop;
                 };
             }
         }
 
         function keyDidUp (e) {
             e.preventDefault();
-            if(current.event){
+            if(current.e){
+                if(current.key.key.length > 2){
+                    if(current.key.key == "delete"){
+                        textarea.delete();
+                    }else if(current.key.key == "enter"){
+                        textarea.insertChar("\n");
+                    }else if(current.key.key == "space"){
+                        textarea.insertChar(" ");
+                    }
+                }else{
+                    textarea.insertChar(current.key.key);
+                }
                 // 凸ませる
                 keyboard.modifyKeys({
                     type : "enable",
                     withouts : []
                 });
-                console.log(buffer);
-                switch(buffer.length){
-                    case 1:
-                        // meta key
-                        if(buffer[0].length > 2){
-                            switch(buffer[0]){
-                                case "delete":
-                                    textarea.delete();
-                                    break;
-                                default :
-                                    break;
-                            }
-                        }else{
-                            if(buffer[0] == "n"){
-                                textarea.insertChar("ん");
-                            }else{
-                                textarea.insertChar(buffer[0]);
-                            }
-                        }
-                        break;
-                    case 2:
-                        var r = dictionary[buffer[0]][buffer[1]];
-                        if(r){
-                            textarea.insertChar(r);
-                        }
-                        break;
-                    case 3:
-                        var r = dictionary[buffer[0]]["y"+buffer[2]];
-                        if(r){
-                            textarea.insertChar(r);
-                        }
-                        break;
-                    default:
-                        break;
+
+                
+                var m = [];
+                for(var i = 0 ; i < rows[2].length ; i++){
+                    m[i] = rows[2][i];
                 }
+                keyboard.modifyKeysWithKeyAtRowIndex(m,2);
+                console.log(buffer);
+//                switch(buffer.length){
+//                    case 1:
+//                        // meta key
+//                        if(buffer[0].length > 2){
+//                            switch(buffer[0]){
+//                                case "delete":
+//                                    textarea.delete();
+//                                    break;
+//                                default :
+//                                    break;
+//                            }
+//                        }else{
+//                            if(buffer[0] == "n"){
+//                                textarea.insertChar("ん");
+//                            }else{
+//                                textarea.insertChar(buffer[0]);
+//                            }
+//                        }
+//                        break;
+//                    case 2:
+//                        var r = dictionary[buffer[0]][buffer[1]];
+//                        if(r){
+//                            textarea.insertChar(r);
+//                        }
+//                        break;
+//                    case 3:
+//                        var r = dictionary[buffer[0]]["y"+buffer[2]];
+//                        if(r){
+//                            textarea.insertChar(r);
+//                        }
+//                        break;
+//                    default:
+//                        break;
+//                }
                 buffer = [];
-                current.event = null;
+                current.e = null;
                 current.key = null;
             }
         }
 
         function mouseDidUp (e){
             e.preventDefault();
-            if(current.event){
+            if(current.e){
                 current.key.push();
                 keyboard.modifyKeys({
                     type : "enable",
@@ -234,7 +351,7 @@
                     });
                 console.log(buffer);
                 buffer = [];
-                current.event = null;
+                current.e = null;
                 current.key = null;
             };
         }
@@ -244,11 +361,11 @@
 
         function textareaDidChange (e,data) {
             console.log("inserted : " + data.inserted);
-            var corrected = corrector.sandwhich(data.inserted);
-            if(corrected){
-                console.log("corrected is " + corrected);
-                //textarea.correct(corrected);
-            }
+//            var corrected = corrector.sandwhich(data.inserted);
+//            if(corrected){
+//                console.log("corrected is " + corrected);
+//                //textarea.correct(corrected);
+//            }
             return true;
         }
 
@@ -351,6 +468,21 @@
             return this;
         },
         rows : [],
+        modifyKeysWithKeyAtRowIndex : function(keys,index){
+            var cKeys = this.rows[index].keys; 
+            var newKeys = [];           
+            for(var i = 0 , max = keys.length ; i < max ; i++){
+                var key = this.rows[index].keys[i];
+                // bug
+                key.key = keys[i];
+                if(keys[i].length > 2){
+                    key.char.innerHTML = dictionary[keys[i]].center;
+                }else{
+                    key.char.innerHTML = keys[i];
+                }
+            }
+            return cKeys;
+        },
         modifyKeys : function(arg){
             for(var i = 0 , maxi = this.rows.length ; i < maxi ; i++){
                 for(var j = 0 , maxj = this.rows[i].keys.length ; j < maxj ; j++){
@@ -379,9 +511,11 @@
             this.id = "key-row-" + index;
             this.className = "key-row clearfix";
             this.keys = [];
+            this.index = index;
             return this;
         },
-        keys : []
+        keys : [],
+        index : -1
     };
 
 
@@ -406,7 +540,7 @@
             char = $.extend(div(),KeyChar).init(key);
             this.char = char;
             this.appendChild(char);
-
+            
             return this;
         },
         char : {},
@@ -427,6 +561,10 @@
         },
         push : function(){
             $(this).removeClass("gbv").addClass("gg");
+        },
+        modifyDisplayChar : function(c) {
+            this.char.innerHTML = c;
+            this.key = c;
         }
     };
 
@@ -436,7 +574,12 @@
             if(iPhone){
                 this.className += " key-char-iPhone";
             };
-            this.innerHTML = key.toUpperCase();
+            if(key.length > 2){
+                this.style.height = "28px";
+                this.innerHTML = dictionary[key].center;
+            }else{
+                this.innerHTML = key.toUpperCase();
+            }
             return this;
         }
     };
@@ -511,8 +654,8 @@
             for(var i = 0 , count = 0 , max = this.buffer.length - 1 ; i< max ; i++){
                 if(this.buffer[max-i] != this.buffer[max]){
                     break;
-                }else{
-                    count++;
+                    }else{
+                        count++;
                 };
             };
             return count;
@@ -541,28 +684,29 @@
     };
 
     getPosition = function(e){
-        if(e.touches){
-            return { x : e.changedTouches[0].pageX , y : e.changedTouches[0].pageY };
+        if(iPad || Android || iPhone){
+            if(e.touches){
+                return { x : e.changedTouches[0].pageX , y : e.changedTouches[0].pageY };
+            }else if(e.originalEvent) {
+                return { x : e.originalEvent.touches[0].pageX , y : e.originalEvent.touches[0].pageY }
+            }
         }else{
             return { x : e.pageX , y : e.pageY };
-        };
+        }
     };
 
-    getDistance = function(curE, prevE){
-        var curPos = getPosition(curE),
-        prevPos = getPosition(prevE);
+    getDistance = function(curPos, prevPos){
+        //        var curPos = getPosition(curE),
+        //        prevPos = getPosition(prevE);
         return Math.floor(Math.sqrt(Math.pow((curPos.x - prevPos.x),2) + Math.pow((curPos.y - prevPos.y),2)));
     };
 
-    getDirection = function(curE, prevE){
-        var curpos = getPosition(curE),
-        prevPos = getPosition(prevE),
-        dx = curpos.x - prevPos.x, 
-        dy = -(curpos.y - prevPos.y),
+    getDirection = function(curPos, prevPos){
+        //        var curPos = getPosition(curE),
+        //        prevPos = getPosition(prevE),
+        var dx = curPos.x - prevPos.x, 
+        dy = -(curPos.y - prevPos.y),
         angle = Math.atan2(dy,dx);
-
-        $debug1.value = "x : " + curpos.x + " y : " + curpos.y;
-        $debug2.value = "x : " + prevPos.x + " y : " + prevPos.y;
 
         if(angle < 0 ){
             angle += PI * 2;
@@ -588,6 +732,10 @@
         }
     };
 
+    getKeyPressed = function(pos) {
+        
+    }
+
     stopEvent = function(e){
         if(e.stopPropagation){
             e.stopPropagation();
@@ -600,69 +748,6 @@
         return document.createElement("div");
     }
 
-    // Data for each rows of keyboard
-    rows[0] = ["1","2","3","4","5","6","7","8","9","0"];
-    rows[1] = ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "delete"]
-    rows[2] = ["a", "s", "d", "f", "g", "h", "j", "k", "l","enter"]
-    rows[3] = ["shift","z", "x", "c", "v", "b", "n", "m", ",", ".","-"];
-    rows[4] = ["command","space","num"];
-
-    // Data for Pie Menu 
-    dictionary = {
-        "1" : {center : "1", pieces : ["","","","","",""] },
-        "2" : {center : "2", pieces : ["","","","","",""] },
-        "3" : {center : "3", pieces : ["","","","","",""] },
-        "4" : {center : "4", pieces : ["","","","","",""] },
-        "5" : {center : "5", pieces : ["","","","","",""] },
-        "6" : {center : "6", pieces : ["","","","","",""] },
-        "7" : {center : "7", pieces : ["","","","","",""] },
-        "8" : {center : "8", pieces : ["","","","","",""] },
-        "9" : {center : "9", pieces : ["","","","","",""] },
-        "0" : {center : "0", pieces : ["","","","","",""] },
-        "q" : { a : "くぁ", i : "くぃ", u :  "く"  , e : "くぇ", o : "くぉ"},
-        "w" : { a : "わ"  , i : "うぃ", u :  "う"  , e : "うぇ", o : "を" },
-        "e" : { a : "え"  , i : "え"  , u :  "え"  , e : "え"  , o : "え" },
-        "r" : { a : "ら"  , i : "り"  , u :  "る"  , e : "れ"  , o : "ろ" , ya : "りゃ", yi : "い", yu : "りゅ", ye : "いぇ", yo : "よ"},
-        "t" : { a : "た"  , i : "ち"  , u :  "つ"  , e : "て"  , o : "と" , ya : "ちゃ", yi : "ち", yu : "ちゅ", ye : "ちぇ", yo : "ちょ" },
-        "y" : { a : "や"  , i : "い"  , u :  "ゆ"  , e : "え"  , o : "よ"},
-        "u" : { a : "う"  , i : "う"  , u :  "う"  , e : "う"  , o : "う"},
-        "i" : { a : "い"  , i : "い"  , u :  "い"  , e : "い"  , o : "い"},
-        "o" : { a : "お"  , i : "お"  , u :  "お"  , e : "お"  , o : "お"},
-        "p" : { a : "ぱ"  , i : "ぴ"  , u :  "ぷ"  , e : "ぺ"  , o : "ぽ" , ya : "ぴゃ" , yi : "ぴぃ" , yu : "ぴゅ", ye : "ぴぇ", yo : "ぴょ" },
-        "a" : { a : "あ"  , i : "あ"  , u :  "あ"  , e : "あ"  , o : "あ"},
-        "s" : { a : "さ"  , i : "し"  , u :  "す"  , e : "せ"  , o : "そ" , ya : "しゃ", yi : "し", yu : "しゅ", ye : "しぇ", yo : "しょ"},
-        "d" : { a : "だ"  , i : "ぢ"  , u :  "づ"  , e : "で"  , o : "ど" , ya : "ぢゃ", yi : "ぢぃ", yu : "ぢゅ", ye : "ぢぇ", yo :"ぢょ" },
-        "f" : { a : "ふぁ", i : "ふぃ", u :  "ふ"  , e : "ふぇ", o : "ふぉ" , ya : "ふゃ" , yi : "ふぃ" , yu : "ふゅ", ye : "ふぇ", yo : "ふょ"},
-        "g" : { a : "が"  , i : "ぎ"  , u :  "ぐ"  , e : "げ"  , o : "ご" , ya : "ぎゃ", yi : "ぎぃ", yu : "ぎゅ", ye :"ぎぇ" , yo : "ぎょ"},
-        "h" : { a : "は"  , i : "ひ"  , u :  "ふ"  , e : "へ"  , o : "ほ" , ya : "ひゃ", yi : "ひぃ", yu : "ひゅ", ye : "ひぇ", yo : "ひょ"},
-        "j" : { a : "じゃ", i : "じ"  , u :  "じゅ", e : "じぇ", o : "じょ" },
-        "k" : { a : "か"  , i : "き"  , u :  "く"  , e : "け"  , o : "こ" , ya : "きゃ", yi : "きぃ", yu : "きゅ", ye : "きぇ", yo : "きょ"},
-        "l" : { a : "ぁ"  , i : "ぃ"  , u :  "ぅ"  , e : "ぇ"  , o : "ぉ" , ya : "ゃ", yi : "ぃ" , yu : "ゅ" , ye : "ぇ", yo : "ょ"},
-        "z" : { a : "ざ"  , i : "じ"  , u :  "ず"  , e : "ぜ"  , o : "ぞ" , ya : "じゃ", yi : "じ", yu : "じゅ", ye : "じぇ", yo : "じょ"},
-        "x" : { a : "ぁ"  , i : "ぃ"  , u :  "ぅ"  , e : "ぇ"  , o : "ぉ" , ya : "ゃ", yi  : "ぃ" , yu : "ゅ" , ye : "ぇ", yo : "ょ"},
-        "c" : { a : "つぁ", i : "つぃ", u :  "つ"  , e : "つぇ", o : "つぉ" , ya : "ちゃ", yi : "ち", yu : "ちゅ", ye : "ちぇ", yo : "ちょ"},
-        "v" : { a : "ヴぁ", i : "ヴぃ", u :  "ヴ"  , e : "ヴぇ", o : "ヴぉ"},
-        "b" : { a : "ば"  , i : "び"  , u :  "ぶ"  , e : "べ"  , o : "ぼ" , ya : "びょ", yi : "びぃ", yu : "びゅ", ye : "びぇ", yo : "びょ"},
-        "n" : { a : "な"  , i : "に"  , u :  "ぬ"  , e : "ね"  , o : "の" , ya : "にゃ", yi : "にぃ", yu : "にゅ", ye : "にぇ", yo : "にょ"},
-        "m" : { a : "ま"  , i : "み"  , u :  "む"  , e : "め"  , o : "も" , ya : "みゃ", yi : "みぃ", yu : "みゅ", ye : "みぇ", yo : "みょ"},
-        "," : "、",
-        "." : "。",
-        "-" : "ー",
-        "enter"   : ["","","","",""],
-        "command" : ["","","","",""],
-        "shift"   : ["","","","",""],
-        "space"   : "",
-        "delete"  : {center : "⌫", pieces : ["","","","",""] },
-        "num"     : {center : "123",pieces : ["","","","",""] }
-    };
-
-    children = ["k","s","t","n","h","m","y","r","w","g","z","d","b","j","c"];
-    mothers = ["a","i","u","e","o"];
-
-    // Constants
-    PI = 3.14159265;
-    iPhone = (navigator.userAgent.indexOf("iPhone") < 0) ? false : true;
-    iPad = (navigator.userAgent.indexOf("iPad") < 0 ) ?  false : true;
-    Android = (navigator.userAgent.indexOf("Android") < 0 ) ? false : true;
+    
 
 }());
