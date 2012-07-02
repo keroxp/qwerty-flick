@@ -42,9 +42,9 @@
         }
     },
     rows = [
+        ["alt","space","symbol","enter","delete"],
         ["あ","か","さ","た","な"],
-        ["は","ま","や","ら","わ"],
-        ["alt","space","symbol","enter","delete"]
+        ["は","ま","や","ら","わ"]
     ],
     // Data for Pie Menu 
     alterKeys = {
@@ -162,7 +162,7 @@
             this.dent();
             if(typeof alterKeys[this.key] !== "undefined"){
 //                textarea.value = "offs x : " + this.offsetLeft + " y : " + this.offsetTop;
-                keyboard.modifyKeysWithKeyAtRowIndex(alterKeys[this.key], 2);
+                keyboard.modifyKeysWithKeyAtRowIndex(alterKeys[this.key], 0);
                 withouts = alterKeys[this.key];
                 keyboard.modifyKeys({
                     type : "disable",
@@ -206,12 +206,12 @@
 //                textarea.value = index;
                 // mouseout処理
                 if(current.keyIndex && current.keyIndex != index){
-                    var key = keyboard.rows[2].keys[current.keyIndex];
+                    var key = keyboard.rows[0].keys[current.keyIndex];
                     key.push();
                 }
                 // mouseover処理
                 if(index !== false){
-                    var key = keyboard.rows[2].keys[index];
+                    var key = keyboard.rows[0].keys[index];
 //                    textarea.value = key.key;
                     key.dent();
                     current.key = key;
@@ -296,10 +296,10 @@
 
                 
                 var m = [];
-                for(var i = 0 ; i < rows[2].length ; i++){
-                    m[i] = rows[2][i];
+                for(var i = 0 ; i < rows[0].length ; i++){
+                    m[i] = rows[0][i];
                 }
-                keyboard.modifyKeysWithKeyAtRowIndex(m,2);
+                keyboard.modifyKeysWithKeyAtRowIndex(m,0);
                 console.log(buffer);
 //                switch(buffer.length){
 //                    case 1:
